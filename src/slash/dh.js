@@ -62,7 +62,6 @@ function buildDhEmbed({ userName, hope, fear, sides, mod, dc, critHit, timestamp
     let title;
     const desc = [];
 
-    // --- MODIFIED CRIT LOGIC ---
     if (critHit) {
         title = `${EMO.crit} Critical Hit! [ ${total} ]`;
         desc.push(`**Both dice landed on ${hope}!**`);
@@ -75,10 +74,11 @@ function buildDhEmbed({ userName, hope, fear, sides, mod, dc, critHit, timestamp
             : `A moment of hope shines ${EMO.hope}.`
         );
     }
-    // --- END MODIFICATION ---
 
     if (dc !== null && dc !== undefined) {
-        desc.push(`**DC ${dc}** → **${total >= dc ? 'Success ✅' : 'Fail ❌'}**`);
+        // --- THIS IS THE FIXED LINE ---
+        const outcome = critHit || total >= dc ? 'Success ✅' : 'Fail ❌';
+        desc.push(`**DC ${dc}** → **${outcome}**`);
     }
 
     const embed = new EmbedBuilder()
