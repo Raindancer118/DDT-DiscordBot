@@ -65,7 +65,7 @@ function buildDhEmbed({ userName, hope, fear, sides, mod, dc, critHit, timestamp
     // --- MODIFIED CRIT LOGIC ---
     if (critHit) {
         title = `${EMO.crit} Critical Hit! [ ${total} ]`;
-        desc.push(`**Both dice landed on ${hope}!** A critical moment occurs.`);
+        desc.push(`**Both dice landed on ${hope}!**`);
         desc.push(`You gain a Hope point ${EMO.hope}.`);
     } else {
         title = `[ ${total} with ${fearWins ? 'Fear' : 'Hope'} ${fearWins ? EMO.fear : EMO.hope} ]`;
