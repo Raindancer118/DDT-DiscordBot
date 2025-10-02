@@ -5,11 +5,11 @@ export const data = new SlashCommandBuilder()
 .setDescription('Deletes messages from the channel.')
 .addStringOption(option =>
 option.setName('amount')
-.setDescription('Number of messages to delete (1-1000), or type "all" to clear recent messages')
+.setDescription('Number of messages to delete, or type "all" to clear the entire channel')
 .setRequired(true)
 )
-.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages) // User needs this permission
-.setDMPermission(false); // Command cannot be used in DMs
+.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+.setDMPermission(false);
 
 export async function execute(interaction) {
     // --- Permission Check ---
@@ -21,75 +21,87 @@ export async function execute(interaction) {
     }
 
     const amountStr = interaction.options.getString('amount').toLowerCase();
+    let targetAmount;
 
+    // Determine the target number of messages to delete
     if (amountStr === 'all') {
-        // --- Handle 'all' logic ---
-        await interaction.deferReply({ ephemeral: true });
-
-        try {
-            let deletedCount = 0;
-            let isDone = false;
-
-            while (!isDone) {
-                // Fetch up to 100 messages at a time
-                const fetched = await interaction.channel.messages.fetch({ limit: 100 });
-                // bulkDelete cannot delete messages older than 14 days.
-                const messagesToDelete = fetched.filter(msg => (Date.now() - msg.createdTimestamp) < 1209600000); // 14 days in ms
-
-                if (messagesToDelete.size > 0) {
-                    const deleted = await interaction.channel.bulkDelete(messagesToDelete, false);
-                    deletedCount += deleted.size;
-
-                    // If we deleted less than 100, we've likely hit the 14-day wall or cleared everything
-                    if (deleted.size < 100) {
-                        isDone = true;
-                    }
-                    // Add a small delay to avoid hitting Discord's rate limits
-                    await new Promise(res => setTimeout(res, 1000));
-                } else {
-                    isDone = true;
-                }
-            }
-
-            await interaction.editReply({
-                content: `✅ Successfully deleted **${deletedCount}** messages (up to 14 days old).`,
-            });
-            setTimeout(() => interaction.deleteReply(), 5000);
-
-        } catch (error) {
-            console.error('Error during "clear all":', error);
-            await interaction.editReply({
-                content: '❌ An error occurred while trying to clear messages.',
-            });
-        }
-
+        targetAmount = Infinity;
     } else {
-        // --- Handle numeric amount logic ---
-        const amount = parseInt(amountStr, 10);
-
-        if (isNaN(amount) || amount < 1 || amount > 1000) {
+        targetAmount = parseInt(amountStr, 10);
+        if (isNaN(targetAmount) || targetAmount < 1) {
             return interaction.reply({
-                content: 'Please provide a number between 1 and 1000, or type "all".',
+                content: 'Please provide a valid number greater than 0, or type "all".',
                 ephemeral: true
             });
         }
+    }
 
-        await interaction.deferReply({ ephemeral: true });
+    // --- Unified Deletion Logic ---
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply({ content: `🧹 Preparing to clear up to ${targetAmount === Infinity ? 'all' : targetAmount} messages...` });
+
+    let totalDeleted = 0;
+    let lastMessageId = null;
+    let isDone = false;
+
+    while (!isDone && totalDeleted < targetAmount) {
+        // Determine how many messages to fetch in this batch
+        const remaining = targetAmount - totalDeleted;
+        const fetchLimit = Math.min(100, remaining);
+
+        const options = { limit: fetchLimit };
+        if (lastMessageId) {
+            options.before = lastMessageId;
+        }
+
+        const fetched = await interaction.channel.messages.fetch(options);
+
+        // Stop if the channel has no more messages
+        if (fetched.size === 0) {
+            isDone = true;
+            continue;
+        }
+
+        lastMessageId = fetched.last().id;
+
+        const recentMessages = fetched.filter(msg => (Date.now() - msg.createdTimestamp) < 1209600000); // < 14 days
+        const oldMessages = fetched.filter(msg => (Date.now() - msg.createdTimestamp) >= 1209600000); // >= 14 days
 
         try {
-            const { size } = await interaction.channel.bulkDelete(amount, true);
+            // Bulk delete recent messages for efficiency
+            if (recentMessages.size > 0) {
+                const deleted = await interaction.channel.bulkDelete(recentMessages, true);
+                totalDeleted += deleted.size;
+                await interaction.editReply({ content: `🧹 Cleared ${totalDeleted} messages... (fast-deleting recent ones)`, ephemeral: true });
+            }
 
-            await interaction.editReply({
-                content: `✅ Successfully deleted **${size}** messages.`,
-            });
-            setTimeout(() => interaction.deleteReply(), 5000);
-
-        } catch (error) {
-            console.error('Error during bulk delete:', error);
-            await interaction.editReply({
-                content: '❌ An error occurred while trying to delete messages. They might be older than 14 days.',
-            });
+            // Individually delete old messages
+            if (oldMessages.size > 0) {
+                for (const message of oldMessages.values()) {
+                    await message.delete();
+                    totalDeleted++;
+                    // Update the user periodically during the slow part
+                    if (totalDeleted % 5 === 0) {
+                        await interaction.editReply({ content: `🧹 Cleared ${totalDeleted} messages... (slow-deleting old ones)`, ephemeral: true });
+                    }
+                    await new Promise(res => setTimeout(res, 1200)); // Rate limit delay
+                }
+            }
+        } catch (err) {
+            console.error("Error during message deletion batch:", err);
+            await interaction.editReply({ content: `❌ An error occurred after deleting ${totalDeleted} messages. Stopping. Some messages may remain.`, ephemeral: true });
+            isDone = true; // Stop the process on error
         }
+
+        // Stop if we fetched fewer messages than we asked for (means we're at the end)
+        if (fetched.size < fetchLimit) {
+            isDone = true;
+        }
+
+        // Short delay between fetching batches to be safe
+        if (!isDone) await new Promise(res => setTimeout(res, 1000));
     }
+
+    await interaction.editReply({ content: `✅ All done! Successfully deleted a total of **${totalDeleted}** messages.`, ephemeral: true });
 }
 
