@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { Client, Collection, GatewayIntentBits, Partials, Events } from 'discord.js';
 import { loadCommands } from './lib/loadCommands.js';
+import http from 'http'; // <-- add this
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds],
@@ -32,3 +33,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+// --- minimal HTTP server for Render Web Service ---
+const port = process.env.PORT;
+if (port) {
+    const server = http.createServer((req, res) => {
+        if (req.url === '/health') {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('ok');
+            return;
+        }
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Dumb Decision TTRPG bot is running');
+    });
+    server.listen(port, () => console.log(`HTTP server listening on ${port}`));
+}
