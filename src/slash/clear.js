@@ -79,15 +79,21 @@ export async function execute(interaction) {
                 // Individually delete old messages
                 if (oldMessages.size > 0) {
                     for (const message of oldMessages.values()) {
-                        await message.delete();
-                        totalDeleted++;
-                        // Update the user periodically during the slow part
-                        if (totalDeleted % 5 === 0) {
-                            await interaction.editReply({ content: `🧹 Cleared ${totalDeleted} messages... (slow-deleting old ones)`, ephemeral: true });
+                        try {
+                            await message.delete();
+                            totalDeleted++;
+                            if (totalDeleted % 5 === 0) {
+                                await interaction.editReply({ content: `🧹 Cleared ${totalDeleted} messages... (slow-deleting old ones)`, ephemeral: true });
+                            }
+                            await new Promise(res => setTimeout(res, 1000));
+                        } catch (err) {
+                            // This catches errors for single message deletion, like "Unknown Message"
+                            if (err.code === 10008) { // DiscordAPIError.Codes.UnknownMessage
+                                console.log(`Skipped deleting a message that was already gone (ID: ${message.id})`);
+                            } else {
+                                console.error(`Could not delete message ${message.id}:`, err);
+                            }
                         }
-                        // This delay is CRUCIAL to avoid hitting Discord's API rate limits.
-                        // Removing it will cause the command to fail on large purges.
-                        await new Promise(res => setTimeout(res, 1000)); // Reduced delay for a slight speed boost
                     }
                 }
             } catch (err) {
