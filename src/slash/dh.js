@@ -10,7 +10,6 @@ sc.setName('roll')
 .addIntegerOption(o => o.setName('sides').setDescription('DH die size (e.g., 12, 20, 10). Default 12 if no expr.').setRequired(false))
 .addIntegerOption(o => o.setName('mod').setDescription('Modifier to add (e.g., +2 or -1)').setRequired(false))
 .addIntegerOption(o => o.setName('dc').setDescription('Difficulty to meet/beat').setRequired(false))
-.addIntegerOption(o => o.setName('crit').setDescription('Critical threshold (e.g., 20 for nat20, 12 for max d12).').setRequired(false))
 .addBooleanOption(o => o.setName('secret').setDescription('Send only to you (ephemeral)').setRequired(false))
 .addBooleanOption(o => o.setName('animate').setDescription('Show a short roll animation').setRequired(false))
 );
@@ -59,15 +58,25 @@ function anyCritInTerms(terms, crit) {
 function buildDhEmbed({ userName, hope, fear, sides, mod, dc, critHit, timestamp }) {
     const total = hope + fear + mod;
     const fearWins = fear >= hope;
-    const title = `[ ${total} with ${fearWins ? 'Fear' : 'Hope'} ${fearWins ? EMO.fear : EMO.hope} ]`;
 
+    let title;
     const desc = [];
-    if (critHit) desc.push(`${EMO.crit} **Critical Success!**`);
-    desc.push(
-        fearWins
-        ? `The GM would get a fear point ${EMO.fear} or take an action.`
-        : `A moment of hope shines ${EMO.hope}.`
-    );
+
+    // --- MODIFIED CRIT LOGIC ---
+    if (critHit) {
+        title = `${EMO.crit} Critical Hit! [ ${total} ]`;
+        desc.push(`**Both dice landed on ${hope}!** A critical moment occurs.`);
+        desc.push(`You gain a Hope point ${EMO.hope}.`);
+    } else {
+        title = `[ ${total} with ${fearWins ? 'Fear' : 'Hope'} ${fearWins ? EMO.fear : EMO.hope} ]`;
+        desc.push(
+            fearWins
+            ? `The GM would get a fear point ${EMO.fear} or take an action.`
+            : `A moment of hope shines ${EMO.hope}.`
+        );
+    }
+    // --- END MODIFICATION ---
+
     if (dc !== null && dc !== undefined) {
         desc.push(`**DC ${dc}** → **${total >= dc ? 'Success ✅' : 'Fail ❌'}**`);
     }
@@ -135,7 +144,7 @@ export async function execute(interaction) {
     const sides = interaction.options.getInteger('sides') ?? 12;
     const mod = interaction.options.getInteger('mod') ?? 0;
     const dc = interaction.options.getInteger('dc');
-    const crit = interaction.options.getInteger('crit'); // optional threshold
+    const crit = interaction.options.getInteger('crit'); // optional threshold from command
     const secret = interaction.options.getBoolean('secret') ?? false;
     const animate = interaction.options.getBoolean('animate') ?? false;
 
@@ -170,7 +179,11 @@ export async function execute(interaction) {
         // Default Daggerheart
         const hope = d(sides);
         const fear = d(sides);
-        const critHit = crit ? (hope >= crit || fear >= crit) : false;
+
+        // --- MODIFIED CRIT LOGIC ---
+        // A crit now happens if both dice show the same number.
+        const critHit = hope === fear;
+        // --- END MODIFICATION ---
 
         const finalEmbed = buildDhEmbed({
             userName, hope, fear, sides, mod, dc, critHit, timestamp: now
