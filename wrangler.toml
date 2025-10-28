@@ -1,0 +1,8 @@
+name = "daggerheart-bot"
+main = "src/worker.js"
+compatibility_date = "2024-09-10"
+
+[vars]
+# Populate via `wrangler secret put DISCORD_PUBLIC_KEY`
+# Populate via `wrangler secret put DISCORD_TOKEN`
+# Alternatively, set APPLICATION_ID for convenience when making follow-up requests.
