@@ -74,7 +74,33 @@ async function handleCommand(interaction, env, ctx) {
 
 export default {
   async fetch(request, env, ctx) {
-    if (request.method !== 'POST') {
+    const url = new URL(request.url);
+    if (request.method === 'GET') {
+      if (url.pathname === '/status') {
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Bot Status</title>
+            <style>
+                body { font-family: sans-serif; background: #2c2f33; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                .container { background: #23272a; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; }
+                h1 { margin-top: 0; color: #7289da; }
+                .status-item { margin: 10px 0; font-size: 1.2rem; }
+                .online { color: #43b581; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>DDT Bot Status</h1>
+                <div class="status-item">Status: <span class="online">● Online</span></div>
+                <div class="status-item">Platform: Cloudflare Workers</div>
+            </div>
+        </body>
+        </html>
+        `;
+        return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+      }
       return new Response('OK', { status: 200 });
     }
 
