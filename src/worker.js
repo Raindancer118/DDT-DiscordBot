@@ -77,24 +77,97 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'GET') {
       if (url.pathname === '/status') {
+        let discordStatus = 'Unknown';
+        let guilds = [];
+        let errorMsg = '';
+
+        try {
+          const userResp = await fetch('https://discord.com/api/v10/users/@me', {
+            headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` }
+          });
+          if (userResp.ok) {
+            discordStatus = 'Online';
+            const guildsResp = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+              headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` }
+            });
+            if (guildsResp.ok) {
+              guilds = await guildsResp.json();
+            }
+          } else {
+            discordStatus = 'Unreachable';
+            errorMsg = `Discord API Error: ${userResp.status}`;
+          }
+        } catch (e) {
+          discordStatus = 'Error';
+          errorMsg = e.message;
+        }
+
+        const functionalities = [
+          { name: 'Slash Commands', status: 'Operational' },
+          { name: 'Status Page', status: 'Operational' },
+          { name: 'Discord Gateway', status: discordStatus === 'Online' ? 'Operational' : 'Outage' }
+        ];
+
         const html = `
         <!DOCTYPE html>
         <html>
         <head>
             <title>Bot Status</title>
             <style>
-                body { font-family: sans-serif; background: #2c2f33; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                .container { background: #23272a; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center; }
-                h1 { margin-top: 0; color: #7289da; }
-                .status-item { margin: 10px 0; font-size: 1.2rem; }
-                .online { color: #43b581; }
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c2f33; color: #fff; display: flex; justify-content: center; padding-top: 50px; min-height: 100vh; margin: 0; }
+                .container { background: #23272a; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 80%; max-width: 800px; }
+                h1 { margin-top: 0; color: #7289da; text-align: center; margin-bottom: 30px; }
+                .section { margin-bottom: 20px; }
+                .section-title { font-size: 1.1rem; color: #99aab5; border-bottom: 1px solid #99aab5; padding-bottom: 5px; margin-bottom: 10px; }
+                .status-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2c2f33; }
+                .status-row:last-child { border-bottom: none; }
+                .online { color: #43b581; font-weight: bold; }
+                .offline { color: #f04747; font-weight: bold; }
+                .unknown { color: #faa61a; font-weight: bold; }
+                .guild-list { list-style: none; padding: 0; margin: 0; }
+                .guild-item { padding: 5px 0; display: flex; align-items: center; }
+                .guild-icon { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; background: #7289da; display: flex; align-items: center; justify-content: center; font-size: 12px; }
             </style>
         </head>
         <body>
             <div class="container">
                 <h1>DDT Bot Status</h1>
-                <div class="status-item">Status: <span class="online">● Online</span></div>
-                <div class="status-item">Platform: Cloudflare Workers</div>
+                
+                <div class="section">
+                    <div class="section-title">System Status</div>
+                    <div class="status-row">
+                        <span>Worker Status</span>
+                        <span class="online">● Online</span>
+                    </div>
+                    <div class="status-row">
+                        <span>Discord API Connection</span>
+                        <span class="${discordStatus === 'Online' ? 'online' : 'offline'}">● ${discordStatus}</span>
+                    </div>
+                    ${errorMsg ? `<div class="status-row" style="color: #f04747; font-size: 0.9em;">${errorMsg}</div>` : ''}
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Functionalities</div>
+                    ${functionalities.map(f => `
+                        <div class="status-row">
+                            <span>${f.name}</span>
+                            <span class="${f.status === 'Operational' ? 'online' : 'offline'}">${f.status}</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Deployed Servers (${guilds.length})</div>
+                    <ul class="guild-list">
+                        ${guilds.map(g => `
+                            <li class="guild-item">
+                                <div class="guild-icon">${g.icon ? `<img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png" style="width:100%;height:100%;border-radius:50%;">` : g.name.substring(0, 2)}</div>
+                                <span>${g.name}</span>
+                            </li>
+                        `).join('')}
+                        ${guilds.length === 0 ? '<li class="guild-item" style="color: #99aab5;">No servers found or unable to fetch list.</li>' : ''}
+                    </ul>
+                </div>
             </div>
         </body>
         </html>
