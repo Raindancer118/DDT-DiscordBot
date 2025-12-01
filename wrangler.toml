@@ -2,6 +2,7 @@ name = "dumbdecision-ttrpg-bot"
 main = "./dist/_worker.js/index.js"
 assets = { directory = "./dist" }
 compatibility_date = "2024-09-10"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # Populate via `wrangler secret put DISCORD_PUBLIC_KEY`
