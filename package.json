@@ -8,7 +8,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "astro build && wrangler deploy",
+    "deploy": "astro build && echo '_worker.js' > dist/.assetsignore && wrangler deploy",
     "register": "node src/register-commands.js"
   },
   "dependencies": {
