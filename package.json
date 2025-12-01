@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && echo '_worker.js' > dist/.assetsignore",
     "preview": "astro preview",
-    "deploy": "astro build && echo '_worker.js' > dist/.assetsignore && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy",
     "register": "node src/register-commands.js"
   },
   "dependencies": {
