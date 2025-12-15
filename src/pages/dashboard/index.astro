@@ -104,17 +104,9 @@ const discordLink = await db
                             <div class="h-24 bg-gradient-to-r from-purple-900 to-indigo-900" />
                             <div class="px-6 relative flex-1 flex flex-col">
                                 <div class="absolute -top-12 left-6 w-20 h-20 rounded-full border-4 border-gray-800 bg-gray-700 overflow-hidden">
-                                    {char.avatar_image ? (
-                                        <img
-                                            src={char.avatar_image}
-                                            alt={char.name}
-                                            class="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div class="w-full h-full flex items-center justify-center text-2xl">
-                                            👤
-                                        </div>
-                                    )}
+                                    <div class="w-full h-full flex items-center justify-center text-2xl">
+                                        👤
+                                    </div>
                                 </div>
                                 <div class="mt-10 mb-6 flex-1">
                                     <h3 class="text-xl font-bold">

@@ -42,3 +42,45 @@ export async function linkDiscordAccount(db: D1Database, userId: number, discord
         'INSERT INTO discord_connections (discord_id, user_id) VALUES (?, ?)'
     ).bind(discordId, userId).run();
 }
+
+// Session Management
+
+export interface Session {
+    token: string;
+    user_id: number;
+    expires_at: number;
+}
+
+export async function createSession(db: D1Database, userId: number): Promise<string> {
+    const token = crypto.randomUUID();
+    // 1 week expiration
+    const expiresAt = Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7);
+
+    await db.prepare(
+        'INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)'
+    ).bind(token, userId, expiresAt).run();
+
+    return token;
+}
+
+export async function validateSession(db: D1Database, token: string): Promise<Session | null> {
+    const session = await db.prepare(
+        'SELECT * FROM sessions WHERE token = ?'
+    ).bind(token).first<Session>();
+
+    if (!session) return null;
+
+    // Check expiration
+    if (session.expires_at < Math.floor(Date.now() / 1000)) {
+        await invalidateSession(db, token); // Cleanup
+        return null;
+    }
+
+    return session;
+}
+
+export async function invalidateSession(db: D1Database, token: string) {
+    await db.prepare(
+        'DELETE FROM sessions WHERE token = ?'
+    ).bind(token).run();
+}

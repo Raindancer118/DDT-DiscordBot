@@ -33,8 +33,9 @@ const inventory = await getCharacterInventory(db, charId);
 const availableItems = await getAvailableItems(db);
 
 // Fetch all characters for the selector
+// Fetch all characters for the selector
 const { results: allCharacters } = await db
-    .prepare("SELECT id, name, avatar_image FROM characters WHERE user_id = ? AND status != 'archived'")
+    .prepare("SELECT id, name FROM characters WHERE user_id = ? AND status != 'archived'")
     .bind(userId)
     .all<Character>();
 
@@ -61,14 +62,9 @@ const isAdmin = user?.role === "admin";
                 </h2>
                 <p class="text-sm text-gray-400">Inventory Management</p>
                 <div class="mt-4 flex flex-col items-center">
-                    {
-                        character.avatar_image && (
-                            <img
-                                src={character.avatar_image}
-                                class="w-20 h-20 rounded-full border-2 border-purple-500 object-cover mb-4"
-                            />
-                        )
-                    }
+                    <div class="w-20 h-20 rounded-full border-2 border-purple-500 bg-gray-700 flex items-center justify-center text-3xl mb-4">
+                        👤
+                    </div>
                     
                     <!-- Character Switcher (Desktop) -->
                     <div class="relative w-full group">
