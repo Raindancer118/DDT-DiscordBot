@@ -1,38 +1,44 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { getCharacterInventory, getAvailableItems } from "../../lib/inventory";
+import type { Character } from "../../lib/db";
 
-// const { charId } = Astro.url.searchParams;
-// Mock Data
-const inventory = [
-    {
-        id: 1,
-        name: "Healing Potion",
-        quantity: 3,
-        icon: "🧪",
-        rarity: "common",
-        description: "Restores 1d4+2 HP.",
-    },
-    {
-        id: 2,
-        name: "Longsword +1",
-        quantity: 1,
-        icon: "⚔️",
-        rarity: "uncommon",
-        description: "A finely crafted blade.",
-    },
-];
+const db = Astro.locals.runtime.env.DB;
+const userIdCookie = Astro.cookies.get("user_id");
 
-const availableItems = [
-    { id: 101, name: "Rations (1 day)", icon: "🍖", rarity: "common" },
-    { id: 102, name: "Torch", icon: "🔥", rarity: "common" },
-    { id: 103, name: "Rope (50ft)", icon: "➰", rarity: "common" },
-];
+if (!userIdCookie) {
+    return Astro.redirect("/login");
+}
+
+const userId = userIdCookie.number();
+const charIdParam = Astro.url.searchParams.get("charId");
+if (!charIdParam) {
+    return Astro.redirect("/dashboard");
+}
+
+const charId = Number(charIdParam);
+
+// Verify Ownership
+const character = await db
+    .prepare("SELECT * FROM characters WHERE id = ?")
+    .bind(charId)
+    .first<Character>();
+
+if (!character || character.user_id !== userId) {
+    return Astro.redirect("/dashboard?error=Unauthorized");
+}
+
+// Fetch Data
+const inventory = await getCharacterInventory(db, charId);
+const availableItems = await getAvailableItems(db);
 ---
 
-<Layout title="Inventory - DDT Bot">
+<Layout title={`Inventory - ${character.name}`}>
     <div class="flex h-screen bg-gray-900 text-white overflow-hidden">
         <!-- Sidebar -->
-        <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+        <aside
+            class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col hidden md:flex"
+        >
             <div class="p-6 border-b border-gray-700">
                 <a
                     href="/dashboard"
@@ -40,8 +46,20 @@ const availableItems = [
                 >
                     &larr; Back to Dashboard
                 </a>
-                <h2 class="text-xl font-bold text-white">Character Name</h2>
+                <h2 class="text-xl font-bold text-white truncate">
+                    {character.name}
+                </h2>
                 <p class="text-sm text-gray-400">Inventory Management</p>
+                <div class="mt-4 flex justify-center">
+                    {
+                        character.avatar_image && (
+                            <img
+                                src={character.avatar_image}
+                                class="w-20 h-20 rounded-full border-2 border-purple-500 object-cover"
+                            />
+                        )
+                    }
+                </div>
             </div>
 
             <nav class="flex-1 p-4 space-y-2">
@@ -50,22 +68,27 @@ const availableItems = [
                     class="block px-4 py-2 rounded bg-purple-600 text-white font-medium"
                     >Items</a
                 >
-                <a
-                    href="#"
-                    class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300 transition-colors"
-                    >Equipment (Coming Soon)</a
+                <span
+                    class="block px-4 py-2 rounded text-gray-500 cursor-not-allowed"
+                    >Equipment (Soon)</span
                 >
-                <a
-                    href="#"
-                    class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300 transition-colors"
-                    >Spells (Coming Soon)</a
+                <span
+                    class="block px-4 py-2 rounded text-gray-500 cursor-not-allowed"
+                    >Spells (Soon)</span
                 >
             </nav>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto p-8">
-            <header class="flex justify-between items-center mb-8">
+        <main class="flex-1 overflow-y-auto p-8 relative">
+            <div class="md:hidden mb-4">
+                <a href="/dashboard" class="text-gray-400">&larr; Back</a>
+                <h1 class="text-2xl font-bold mt-2">
+                    {character.name}'s Inventory
+                </h1>
+            </div>
+
+            <header class="hidden md:flex justify-between items-center mb-8">
                 <h1 class="text-3xl font-bold">Inventory</h1>
                 <button
                     id="add-item-btn"
@@ -75,68 +98,98 @@ const availableItems = [
                 </button>
             </header>
 
-            <!-- Inventory Grid -->
-            <div
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            <!-- Mobile Add Button -->
+            <button
+                id="add-item-btn-mobile"
+                class="md:hidden w-full mb-6 bg-green-600 py-3 rounded font-bold"
+                >+ Add Item</button
             >
-                {
-                    inventory.map((item) => (
-                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-500 transition-colors group relative">
-                            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button class="text-gray-400 hover:text-red-400">
-                                    🗑️
-                                </button>
-                            </div>
-                            <div class="flex items-start gap-4">
-                                <div class="text-4xl bg-gray-900 p-2 rounded-lg">
-                                    {item.icon}
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-lg">
-                                        {item.name}
-                                    </h3>
-                                    <p class="text-xs text-purple-300 uppercase font-semibold tracking-wider mb-1">
-                                        {item.rarity}
-                                    </p>
-                                    <p class="text-sm text-gray-400 line-clamp-2">
-                                        {item.description}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="mt-4 flex items-center justify-between bg-gray-900 rounded p-2">
-                                <span class="text-xs text-gray-500 uppercase font-bold">
-                                    Quantity
-                                </span>
-                                <div class="flex items-center gap-3">
-                                    <button class="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
-                                        -
+
+            <!-- Inventory Grid -->
+            {
+                inventory.length === 0 ? (
+                    <div class="text-center text-gray-500 mt-20">
+                        <p class="text-xl">Your inventory is empty.</p>
+                        <p>Click "Add Item" to get started.</p>
+                    </div>
+                ) : (
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {inventory.map((item) => (
+                            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-500 transition-colors group relative">
+                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        class="text-gray-400 hover:text-red-400 delete-btn"
+                                        data-id={item.id}
+                                        title="Remove Item"
+                                    >
+                                        🗑️
                                     </button>
-                                    <span class="font-mono font-bold">
-                                        {item.quantity}
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="text-4xl bg-gray-900 p-2 rounded-lg">
+                                        {item.icon || "📦"}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-lg">
+                                            {item.name}
+                                        </h3>
+                                        <p class="text-xs text-purple-300 uppercase font-semibold tracking-wider mb-1">
+                                            {item.rarity || "common"}
+                                        </p>
+                                        <p
+                                            class="text-sm text-gray-400 line-clamp-2"
+                                            title={item.description || ""}
+                                        >
+                                            {item.description ||
+                                                "No description"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between bg-gray-900 rounded p-2">
+                                    <span class="text-xs text-gray-500 uppercase font-bold">
+                                        Quantity
                                     </span>
-                                    <button class="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
-                                        +
-                                    </button>
+                                    <div class="flex items-center gap-3">
+                                        <button
+                                            class="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center update-qty"
+                                            data-id={item.id}
+                                            data-delta="-1"
+                                        >
+                                            -
+                                        </button>
+                                        <span class="font-mono font-bold">
+                                            {item.quantity}
+                                        </span>
+                                        <button
+                                            class="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center update-qty"
+                                            data-id={item.id}
+                                            data-delta="1"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
-                }
-            </div>
+                        ))}
+                    </div>
+                )
+            }
         </main>
 
-        <!-- Add Item Modal (Hidden by default) -->
+        <!-- Add Item Modal -->
         <div
             id="add-item-modal"
-            class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center"
+            class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
         >
             <div
-                class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700 flex flex-col max-h-[80vh]"
+                class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700 flex flex-col max-h-[85vh]"
             >
                 <div
                     class="p-6 border-b border-gray-700 flex justify-between items-center"
                 >
-                    <h2 class="text-2xl font-bold">Add Item to Inventory</h2>
+                    <h2 class="text-2xl font-bold" id="modal-title">
+                        Add Item
+                    </h2>
                     <button
                         id="close-modal-btn"
                         class="text-gray-400 hover:text-white text-2xl"
@@ -144,29 +197,51 @@ const availableItems = [
                     >
                 </div>
 
-                <div class="p-6 flex-1 overflow-y-auto">
+                <!-- SELECT ITEM MODE -->
+                <div id="select-item-mode" class="p-6 flex-1 overflow-y-auto">
                     <input
                         type="text"
-                        placeholder="Search for an item..."
+                        id="item-search"
+                        placeholder="Search common items..."
                         class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 mb-6"
                     />
 
-                    <div class="space-y-2">
+                    <div class="space-y-2 mb-8" id="items-list">
                         <h3
                             class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
                         >
-                            Common Items
+                            Available Items
                         </h3>
                         {
+                            availableItems.length === 0 && (
+                                <p class="text-gray-500 italic">
+                                    No common items found.
+                                </p>
+                            )
+                        }
+                        {
                             availableItems.map((item) => (
-                                <div class="flex items-center justify-between p-3 bg-gray-900/50 rounded hover:bg-gray-700 transition-colors cursor-pointer border border-transparent hover:border-purple-500/50">
+                                <div
+                                    class="item-row flex items-center justify-between p-3 bg-gray-900/50 rounded hover:bg-gray-700 transition-colors cursor-pointer border border-transparent hover:border-purple-500/50"
+                                    data-name={item.name.toLowerCase()}
+                                >
                                     <div class="flex items-center gap-3">
                                         <span class="text-2xl">
-                                            {item.icon}
+                                            {item.icon || "📦"}
                                         </span>
-                                        <span>{item.name}</span>
+                                        <div>
+                                            <div class="font-medium">
+                                                {item.name}
+                                            </div>
+                                            <div class="text-xs text-gray-400">
+                                                {item.description}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button class="text-sm bg-purple-600 hover:bg-purple-500 px-3 py-1 rounded">
+                                    <button
+                                        class="text-sm bg-purple-600 hover:bg-purple-500 px-3 py-1 rounded add-btn"
+                                        data-id={item.id}
+                                    >
                                         Add
                                     </button>
                                 </div>
@@ -174,41 +249,259 @@ const availableItems = [
                         }
                     </div>
 
-                    <div class="mt-8 border-t border-gray-700 pt-6">
-                        <h3
-                            class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
-                        >
-                            Can't find it?
-                        </h3>
+                    <div class="border-t border-gray-700 pt-6">
                         <button
+                            id="switch-to-create-btn"
                             class="w-full py-3 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-400 transition-colors"
                         >
-                            Create Custom Item
+                            + Create Custom Item
                         </button>
                     </div>
+                </div>
+
+                <!-- CREATE CUSTOM MODE -->
+                <div
+                    id="create-item-mode"
+                    class="p-6 flex-1 overflow-y-auto hidden"
+                >
+                    <form id="create-item-form" class="space-y-4">
+                        <div>
+                            <label
+                                class="block text-sm font-medium text-gray-400 mb-1"
+                                >Item Name</label
+                            >
+                            <input
+                                name="name"
+                                required
+                                class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                                placeholder="e.g. Sword of Destiny"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-sm font-medium text-gray-400 mb-1"
+                                >Icon (Emoji)</label
+                            >
+                            <input
+                                name="icon"
+                                class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                                placeholder="⚔️"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-sm font-medium text-gray-400 mb-1"
+                                >Description</label
+                            >
+                            <textarea
+                                name="description"
+                                rows="3"
+                                class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                                placeholder="Optional details..."></textarea>
+                        </div>
+
+                        <div class="pt-4 flex gap-3">
+                            <button
+                                type="button"
+                                id="cancel-create-btn"
+                                class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded"
+                                >Cancel</button
+                            >
+                            <button
+                                type="submit"
+                                class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 rounded font-bold"
+                                >Create & Add</button
+                            >
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </Layout>
 
-<script>
+<script define:vars={{ charId }}>
+    // Modal Logic
     const modal = document.getElementById("add-item-modal");
     const openBtn = document.getElementById("add-item-btn");
+    const openBtnMobile = document.getElementById("add-item-btn-mobile");
     const closeBtn = document.getElementById("close-modal-btn");
 
-    openBtn?.addEventListener("click", () => {
+    // Modes
+    const selectMode = document.getElementById("select-item-mode");
+    const createMode = document.getElementById("create-item-mode");
+    const switchToCreateBtn = document.getElementById("switch-to-create-btn");
+    const cancelCreateBtn = document.getElementById("cancel-create-btn");
+    const modalTitle = document.getElementById("modal-title");
+
+    function openModal() {
         modal?.classList.remove("hidden");
-    });
+        // Reset to select mode
+        selectMode?.classList.remove("hidden");
+        createMode?.classList.add("hidden");
+        modalTitle.textContent = "Add Item";
+    }
 
-    closeBtn?.addEventListener("click", () => {
+    function closeModal() {
         modal?.classList.add("hidden");
+    }
+
+    openBtn?.addEventListener("click", openModal);
+    openBtnMobile?.addEventListener("click", openModal);
+    closeBtn?.addEventListener("click", closeModal);
+    modal?.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
     });
 
-    // Close on click outside
-    modal?.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            modal.classList.add("hidden");
+    // Switch between modes
+    switchToCreateBtn?.addEventListener("click", () => {
+        selectMode?.classList.add("hidden");
+        createMode?.classList.remove("hidden");
+        modalTitle.textContent = "Create Custom Item";
+    });
+
+    cancelCreateBtn?.addEventListener("click", () => {
+        createMode?.classList.add("hidden");
+        selectMode?.classList.remove("hidden");
+        modalTitle.textContent = "Add Item";
+    });
+
+    // Search Filter
+    const searchInput = document.getElementById("item-search");
+    const itemsList = document.getElementById("items-list");
+
+    searchInput?.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase();
+        const rows = itemsList?.querySelectorAll(".item-row");
+        rows?.forEach((row) => {
+            const name = row.getAttribute("data-name");
+            if (name.includes(query)) {
+                row.classList.remove("hidden");
+            } else {
+                row.classList.add("hidden");
+            }
+        });
+    });
+
+    // API Interactions
+
+    // 1. Add Existing Item
+    document.querySelectorAll(".add-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation(); // prevent row click
+            const itemId = btn.getAttribute("data-id");
+
+            // disable button
+            btn.disabled = true;
+            btn.textContent = "Adding...";
+
+            try {
+                const formData = new FormData();
+                formData.append("characterId", charId);
+                formData.append("itemId", itemId);
+                formData.append("quantity", "1");
+
+                const res = await fetch("/api/inventory/add", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert("Failed to add item");
+                    btn.disabled = false;
+                    btn.textContent = "Add";
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error adding item");
+            }
+        });
+    });
+
+    // 2. Create Custom Item
+    const createForm = document.getElementById("create-item-form");
+    createForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = createForm.querySelector("button[type=submit]");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating...";
+
+        const formData = new FormData(createForm);
+        formData.append("characterId", charId);
+        formData.append("addToInventory", "true");
+
+        try {
+            const res = await fetch("/api/items/create", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert("Failed to create item");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Create & Add";
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error creating item");
         }
+    });
+
+    // 3. Update Quantity / Remove
+    document.querySelectorAll(".update-qty").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const inventoryId = btn.getAttribute("data-id");
+            const delta = btn.getAttribute("data-delta"); // 1 or -1
+
+            // Optimistic UI could go here, but reload is safer for MVP
+            try {
+                const formData = new FormData();
+                formData.append("inventoryId", inventoryId);
+                formData.append("quantity", delta === "1" ? "-1" : "1");
+                // Wait, my API logic for 'remove' uses delta as 'remove amount'.
+                // If I want to ADD, I should use /add API or make /remove support negative removal (addition).
+                // My remove API: const delta = -1 * (Number(formData.get('quantity')) || 1);
+                // If I pass quantity=1, delta is -1.
+                // If I pass quantity=-1, delta is +1.
+
+                // So if button is +, delta is 1. I need to pass quantity=-1 to get +1 delta.
+
+                const qtyToSend = delta === "1" ? "-1" : "1";
+
+                const res = await fetch("/api/inventory/remove", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (res.ok) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    });
+
+    // 4. Delete Entirely
+    document.querySelectorAll(".delete-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            if (!confirm("Remove this item?")) return;
+
+            const inventoryId = btn.getAttribute("data-id");
+            // To delete we can just remove a large quantity
+            const formData = new FormData();
+            formData.append("inventoryId", inventoryId);
+            formData.append("quantity", "999999");
+
+            await fetch("/api/inventory/remove", {
+                method: "POST",
+                body: formData,
+            });
+            window.location.reload();
+        });
     });
 </script>
