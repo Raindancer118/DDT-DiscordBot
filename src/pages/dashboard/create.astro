@@ -22,9 +22,11 @@ if (Astro.request.method === "POST") {
             throw new Error("Name is required");
         }
 
+        const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds, common for SQLite/ D1
+
         await db
             .prepare(
-                "INSERT INTO characters (user_id, name, bio, avatar_image, status, is_custom, is_public) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO characters (user_id, name, bio, avatar_image, status, campaign_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             )
             .bind(
                 userId,
@@ -32,8 +34,9 @@ if (Astro.request.method === "POST") {
                 bio || null,
                 avatar_image || null,
                 "active",
-                1,
-                0,
+                null, // campaign_id
+                now,
+                now,
             )
             .run();
 
