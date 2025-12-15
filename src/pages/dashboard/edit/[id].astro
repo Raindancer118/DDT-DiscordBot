@@ -124,8 +124,7 @@ if (Astro.request.method === "POST") {
                         class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
                     >
                         <option value="active" selected={character.status === "active"}>Active</option>
-                        <option value="inactive" selected={character.status === "inactive"}>Inactive</option>
-                        <option value="archived" selected={character.status === "archived"}>Archived</option>
+                        <option value="retired" selected={character.status === "retired"}>Retired</option>
                     </select>
                 </div>
 
