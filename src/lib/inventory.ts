@@ -44,3 +44,14 @@ export async function createCustomItem(db: D1Database, userId: number, name: str
         'INSERT INTO items (name, description, icon, is_custom, created_by, is_public) VALUES (?, ?, ?, 1, ?, 0)'
     ).bind(name, description, icon, userId).run();
 }
+
+export async function updateItem(db: D1Database, itemId: number, name: string, description: string, icon: string, rarity: string) {
+    await db.prepare(
+        'UPDATE items SET name = ?, description = ?, icon = ?, rarity = ? WHERE id = ?'
+    ).bind(name, description, icon, rarity, itemId).run();
+}
+
+export async function deleteItem(db: D1Database, itemId: number) {
+    await db.prepare('DELETE FROM items WHERE id = ?').bind(itemId).run();
+    await db.prepare('DELETE FROM inventory WHERE item_id = ?').bind(itemId).run();
+}
