@@ -9,7 +9,7 @@ export const definition = {
 export async function handle(interaction, env) {
     const baseUrl = 'https://dc.bot.dumbdecision.de';
 
-    const loginUrl = `${baseUrl}/login`;
+    const loginUrl = `${baseUrl}/login?from=command`;
 
     return {
         type: 4,
