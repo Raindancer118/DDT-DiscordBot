@@ -16,6 +16,7 @@ if (!DISCORD_CLIENT_ID || !REDIRECT_URI) {
     );
 }
 
+const isCommandVisit = Astro.url.searchParams.get("from") === "command";
 const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20email`;
 ---
 
@@ -62,46 +63,56 @@ const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DI
                     type="submit"
                     class="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded font-semibold transition-colors"
                 >
-                    Log In & Link Discord
+                    {
+                        isCommandVisit
+                            ? "Log In & Link Discord"
+                            : "Login with dumbdecision.de"
+                    }
                 </button>
             </form>
 
-            <div class="relative flex py-5 items-center">
-                <div class="flex-grow border-t border-gray-700"></div>
-                <span class="flex-shrink-0 mx-4 text-gray-500 text-sm"
-                    >Or for Verification</span
-                >
-                <div class="flex-grow border-t border-gray-700"></div>
-            </div>
+            {
+                !isCommandVisit && (
+                    <>
+                        <div class="relative flex py-5 items-center">
+                            <div class="flex-grow border-t border-gray-700" />
+                            <span class="flex-shrink-0 mx-4 text-gray-500 text-sm">
+                                Or for Verification
+                            </span>
+                            <div class="flex-grow border-t border-gray-700" />
+                        </div>
 
-            <div class="space-y-4">
-                <a
-                    href={discordLoginUrl}
-                    class="block w-full py-3 px-4 bg-[#5865F2] hover:bg-[#4752C4] rounded text-center font-semibold transition-colors flex items-center justify-center gap-2"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                    >
-                        <path
-                            d="M13.545 2.907a13.227 13.227 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.19 12.19 0 0 0-3.658 0 8.258 8.258 0 0 0-.412-.833.051.051 0 0 0-.052-.025c-1.125.194-2.209.534-3.257 1.011a.041.041 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032c.001.014.01.028.021.037a13.276 13.276 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019c.308-.42.582-.863.818-1.329a.05.05 0 0 0-.01-.059.051.051 0 0 0-.018-.011 8.875 8.875 0 0 1-1.248-.595.05.05 0 0 1-.02-.066.051.051 0 0 1 .015-.019c.246.186.495.362.747.522a.051.051 0 0 0 .065-.005 12.747 12.747 0 0 0 8.58-3.078 12.122 12.122 0 0 0-2.355 2.502.05.05 0 0 0 .056.035 9.163 9.163 0 0 1 1.248.595.05.05 0 0 0 .038.125c.236-.466.51-.909.818-1.329a.05.05 0 0 0 .056.019 13.276 13.276 0 0 0 3.995-2.02.041.041 0 0 0 .021-.037c.304-3.078-.291-6.101-2.176-9.102a.042.042 0 0 0-.021-.018Z"
-                        ></path>
-                    </svg>
-                    Link Discord Account
-                </a>
+                        <div class="space-y-4">
+                            <a
+                                href={discordLoginUrl}
+                                class="block w-full py-3 px-4 bg-[#5865F2] hover:bg-[#4752C4] rounded text-center font-semibold transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    fill="currentColor"
+                                    viewBox="0 0 16 16"
+                                >
+                                    <path d="M13.545 2.907a13.227 13.227 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.19 12.19 0 0 0-3.658 0 8.258 8.258 0 0 0-.412-.833.051.051 0 0 0-.052-.025c-1.125.194-2.209.534-3.257 1.011a.041.041 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032c.001.014.01.028.021.037a13.276 13.276 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019c.308-.42.582-.863.818-1.329a.05.05 0 0 0-.01-.059.051.051 0 0 0-.018-.011 8.875 8.875 0 0 1-1.248-.595.05.05 0 0 1-.02-.066.051.051 0 0 1 .015-.019c.246.186.495.362.747.522a.051.051 0 0 0 .065-.005 12.747 12.747 0 0 0 8.58-3.078 12.122 12.122 0 0 0-2.355 2.502.05.05 0 0 0 .056.035 9.163 9.163 0 0 1 1.248.595.05.05 0 0 0 .038.125c.236-.466.51-.909.818-1.329a.05.05 0 0 0 .056.019 13.276 13.276 0 0 0 3.995-2.02.041.041 0 0 0 .021-.037c.304-3.078-.291-6.101-2.176-9.102a.042.042 0 0 0-.021-.018Z" />
+                                </svg>
+                                Log in with Discord
+                            </a>
 
-                <div class="text-center text-sm text-gray-500">
-                    Don't have a Dumb Decision account?
-                    <a
-                        href="https://dumbdecision.de/members"
-                        class="text-purple-400 hover:text-purple-300"
-                        target="_blank">Register here</a
-                    >
-                </div>
-            </div>
+                            <div class="text-center text-sm text-gray-500">
+                                Don't have a Dumb Decision account?
+                                <a
+                                    href="https://dumbdecision.de/members"
+                                    class="text-purple-400 hover:text-purple-300"
+                                    target="_blank"
+                                >
+                                    Register here
+                                </a>
+                            </div>
+                        </div>
+                    </>
+                )
+            }
         </div>
     </main>
 </Layout>
