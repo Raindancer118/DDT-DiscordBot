@@ -26,13 +26,12 @@ if (Astro.request.method === "POST") {
 
         await db
             .prepare(
-                "INSERT INTO characters (user_id, name, bio, avatar_image, status, campaign_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO characters (user_id, name, bio, status, campaign_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             )
             .bind(
                 userId,
                 name,
                 bio || null,
-                avatar_image || null,
                 "active",
                 null, // campaign_id
                 now,
@@ -101,23 +100,7 @@ if (Astro.request.method === "POST") {
                     ></textarea>
                 </div>
 
-                <div>
-                    <label
-                        for="avatar_image"
-                        class="block text-sm font-medium text-gray-400 mb-2"
-                        >Avatar Image URL</label
-                    >
-                    <input
-                        type="url"
-                        id="avatar_image"
-                        name="avatar_image"
-                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="https://example.com/image.png"
-                    />
-                    <p class="text-xs text-gray-500 mt-1">
-                        Direct link to an image file (PNG, JPG, etc.)
-                    </p>
-                </div>
+                <!-- Avatar Image input removed as column does not exist -->
 
                 <div class="pt-4 flex justify-end">
                     <button
