@@ -14,7 +14,7 @@ const userId = userIdCookie.number();
 // Fetch Characters
 const { results: characters } = await db
     .prepare(
-        'SELECT * FROM characters WHERE user_id = ? AND status != "archived" ORDER BY updated_at DESC',
+        'SELECT * FROM characters WHERE user_id = ? ORDER BY updated_at DESC',
     )
     .bind(userId)
     .all<Character>();

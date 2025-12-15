@@ -35,7 +35,7 @@ const availableItems = await getAvailableItems(db);
 // Fetch all characters for the selector
 // Fetch all characters for the selector
 const { results: allCharacters } = await db
-    .prepare("SELECT id, name FROM characters WHERE user_id = ? AND status != 'archived'")
+    .prepare("SELECT id, name FROM characters WHERE user_id = ? AND status = 'active'")
     .bind(userId)
     .all<Character>();
 
