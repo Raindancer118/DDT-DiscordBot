@@ -1,10 +1,9 @@
 
 import type { APIRoute } from 'astro';
-import { verifyPassword } from '../../../lib/crypto';
-import type { User } from '../../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals, cookies }) => {
     const data = await request.formData();
+    // Support both JSON body and FormData for flexibility, though frontend uses FormData
     const email = data.get('email') as string;
     const password = data.get('password') as string;
 
@@ -12,38 +11,41 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
         return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400 });
     }
 
-    const db = locals.runtime.env.DB;
-
     try {
-        const user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<User>();
+        // 1. Authenticate against External API
+        const authResponse = await fetch('https://dumbdecision.de/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
 
-        // Mocking check since I don't have the password salt column in my types yet, but I assume it exists
-        // based on user request "password_hash" and "password_salt" columns.
-        // Wait, I need to update my types in db.ts to reflect that. I'll do it implicitly here for now.
-
-        // Actually, I should check if user exists first.
-        if (!user) {
+        if (!authResponse.ok) {
             return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
         }
 
-        // cast user to have these props if they are missing in type definition
-        const storedHash = (user as any).password_hash;
-        const storedSalt = (user as any).password_salt;
+        const { user, token } = await authResponse.json();
 
-        if (!storedHash || !storedSalt) {
-            // Fallback or error if data is corrupted/legacy
-            return new Response(JSON.stringify({ error: 'User data error' }), { status: 500 });
+        if (!user || !user.id) {
+            return new Response(JSON.stringify({ error: 'Invalid response from auth server' }), { status: 500 });
         }
 
-        const isValid = await verifyPassword(password, storedHash, storedSalt);
+        // 2. Sync User to Local D1 Database
+        const db = locals.runtime.env.DB;
 
-        if (!isValid) {
-            return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
+        // Check if user exists
+        const existing = await db.prepare('SELECT id FROM users WHERE id = ?').bind(user.id).first();
+
+        if (existing) {
+            await db.prepare(
+                'UPDATE users SET email = ?, first_name = ?, last_name = ?, role = ? WHERE id = ?'
+            ).bind(user.email, user.firstName, user.lastName, user.role, user.id).run();
+        } else {
+            await db.prepare(
+                'INSERT INTO users (id, email, first_name, last_name, role) VALUES (?, ?, ?, ?, ?)'
+            ).bind(user.id, user.email, user.firstName, user.lastName, user.role).run();
         }
 
-        // Set session cookie
-        // In a real app, sign this or use a session table.
-        // For now, I'll store the User ID in a simple cookie.
+        // 3. Set Session
         cookies.set('user_id', user.id.toString(), {
             path: '/',
             httpOnly: true,
@@ -52,10 +54,20 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
             maxAge: 60 * 60 * 24 * 7 // 1 week
         });
 
-        return new Response(JSON.stringify({ success: true }), { status: 200 });
+        // Optional: Store the token if needed for future API calls to dumbdecision.de
+        cookies.set('auth_token', token, {
+            path: '/',
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7
+        });
+
+        return new Response(JSON.stringify({ success: true, user }), { status: 200 });
 
     } catch (e) {
         console.error(e);
-        return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
+        return new Response(JSON.stringify({ error: 'Internal User Sync Error' }), { status: 500 });
     }
 };
+
