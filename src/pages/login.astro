@@ -7,12 +7,12 @@ import Layout from "../layouts/Layout.astro";
 
 const runtimeEnv = Astro.locals.runtime?.env || {};
 
-const DISCORD_CLIENT_ID = runtimeEnv.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_ID = runtimeEnv.CLIENT_ID;
 const REDIRECT_URI = runtimeEnv.DISCORD_REDIRECT_URI;
 
 if (!DISCORD_CLIENT_ID || !REDIRECT_URI) {
     throw new Error(
-        "Missing DISCORD_CLIENT_ID or DISCORD_REDIRECT_URI in environment variables.",
+        "Missing CLIENT_ID or DISCORD_REDIRECT_URI in environment variables.",
     );
 }
 

@@ -20,7 +20,7 @@ export const GET: APIRoute = async ({ request, locals, cookies, redirect }) => {
     }
 
     // Exchange code for token
-    const CLIENT_ID = import.meta.env.DISCORD_CLIENT_ID;
+    const CLIENT_ID = import.meta.env.CLIENT_ID;
     const CLIENT_SECRET = import.meta.env.DISCORD_CLIENT_SECRET;
     const REDIRECT_URI = import.meta.env.DISCORD_REDIRECT_URI;
 
