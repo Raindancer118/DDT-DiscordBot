@@ -6,13 +6,14 @@ import Layout from "../layouts/Layout.astro";
 // For this MVP, we will simulate the "Sign in with Discord" button.
 
 const runtimeEnv = Astro.locals.runtime?.env || {};
-const runtimeEnv = Astro.locals.runtime?.env || {};
 
 const DISCORD_CLIENT_ID = runtimeEnv.DISCORD_CLIENT_ID;
 const REDIRECT_URI = runtimeEnv.DISCORD_REDIRECT_URI;
 
 if (!DISCORD_CLIENT_ID || !REDIRECT_URI) {
-    throw new Error("Missing DISCORD_CLIENT_ID or DISCORD_REDIRECT_URI in environment variables.");
+    throw new Error(
+        "Missing DISCORD_CLIENT_ID or DISCORD_REDIRECT_URI in environment variables.",
+    );
 }
 
 const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20email`;
