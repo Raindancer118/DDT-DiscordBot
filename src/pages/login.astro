@@ -17,7 +17,7 @@ if (!DISCORD_CLIENT_ID || !REDIRECT_URI) {
 }
 
 const isCommandVisit = Astro.url.searchParams.get("from") === "command";
-const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20email`;
+const discordLoginUrl = `/api/auth/discord`;
 ---
 
 <Layout title="DumbDecision e.V. | Login">

@@ -5,18 +5,19 @@ import { getDiscordUser, linkDiscordAccount } from '../../../lib/auth';
 export const GET: APIRoute = async ({ request, locals, cookies, redirect }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
 
-    // NOTE: In production, check STATE to prevent CSRF.
+    // Verify State
+    const storedState = cookies.get('discord_oauth_state')?.value;
+    if (!storedState || storedState !== state) {
+        return new Response('Invalid state parameter', { status: 400 });
+    }
+
+    // Clear state cookie
+    cookies.delete('discord_oauth_state', { path: '/' });
 
     if (!code) {
         return new Response('Missing code', { status: 400 });
-    }
-
-    const userId = cookies.get('user_id')?.number();
-
-    if (!userId) {
-        // User must be logged in to link account
-        return redirect('/login?error=You must be logged in to link your account');
     }
 
     // Exchange code for token
@@ -56,11 +57,35 @@ export const GET: APIRoute = async ({ request, locals, cookies, redirect }) => {
             return new Response('Failed to get user info from Discord', { status: 500 });
         }
 
-        // Link in DB
         const db = locals.runtime.env.DB;
-        await linkDiscordAccount(db, userId, discordUser.id);
+        const userId = cookies.get('user_id')?.number();
 
-        return redirect('/dashboard?success=Account linked!');
+        if (userId) {
+            // Case 1: Link Account (User is already logged in)
+            await linkDiscordAccount(db, userId, discordUser.id);
+            return redirect('/dashboard?success=Account linked!');
+        } else {
+            // Case 2: Login with Discord (User is not logged in)
+            // Check if discord ID is linked to a user
+            const connection = await db.prepare('SELECT user_id FROM discord_connections WHERE discord_id = ?')
+                .bind(discordUser.id)
+                .first();
+
+            if (connection && connection.user_id) {
+                // User found, log them in
+                cookies.set('user_id', connection.user_id.toString(), {
+                    path: '/',
+                    httpOnly: true,
+                    secure: true, // true in prod
+                    sameSite: 'lax',
+                    maxAge: 60 * 60 * 24 * 7 // 1 week
+                });
+                return redirect('/dashboard');
+            } else {
+                // User not found
+                return redirect('/login?error=No account linked with this Discord user. Please log in normally and link your account first.');
+            }
+        }
 
     } catch (e) {
         console.error(e);
