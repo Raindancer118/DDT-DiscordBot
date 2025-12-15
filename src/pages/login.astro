@@ -34,7 +34,7 @@ const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DI
             <form
                 id="login-form"
                 class="space-y-4 mb-6"
-                data-discord-url={discordLoginUrl}
+                data-discord-url={isCommandVisit ? discordLoginUrl : undefined}
             >
                 <div>
                     <label class="block text-sm font-medium text-gray-400 mb-1"
