@@ -1,0 +1,130 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import type { Character } from "../../lib/db";
+
+const db = Astro.locals.runtime.env.DB;
+const userIdCookie = Astro.cookies.get("user_id");
+
+if (!userIdCookie) {
+    return Astro.redirect("/login");
+}
+
+const userId = userIdCookie.number();
+
+if (Astro.request.method === "POST") {
+    try {
+        const formData = await Astro.request.formData();
+        const name = formData.get("name") as string;
+        const bio = formData.get("bio") as string;
+        const avatar_image = formData.get("avatar_image") as string;
+
+        if (!name) {
+            throw new Error("Name is required");
+        }
+
+        await db
+            .prepare(
+                "INSERT INTO characters (user_id, name, bio, avatar_image, status, is_custom, is_public) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            )
+            .bind(
+                userId,
+                name,
+                bio || null,
+                avatar_image || null,
+                "active",
+                1,
+                0,
+            )
+            .run();
+
+        return Astro.redirect("/dashboard");
+    } catch (error) {
+        console.error("Error creating character:", error);
+        // In a real app, you'd probably want to return the error to the form
+    }
+}
+---
+
+<Layout title="Create Character - DDT Bot">
+    <div
+        class="min-h-screen bg-gray-900 text-white p-6 flex flex-col items-center"
+    >
+        <header class="w-full max-w-2xl mb-8 flex items-center justify-between">
+            <h1
+                class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600"
+            >
+                Create New Character
+            </h1>
+            <a
+                href="/dashboard"
+                class="text-gray-400 hover:text-white transition-colors"
+            >
+                &larr; Back to Dashboard
+            </a>
+        </header>
+
+        <main
+            class="w-full max-w-2xl bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-xl"
+        >
+            <form method="POST" class="space-y-6">
+                <div>
+                    <label
+                        for="name"
+                        class="block text-sm font-medium text-gray-400 mb-2"
+                        >Character Name *</label
+                    >
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        required
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                        placeholder="e.g. Sir Codes-a-Lot"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        for="bio"
+                        class="block text-sm font-medium text-gray-400 mb-2"
+                        >Bio / Description</label
+                    >
+                    <textarea
+                        id="bio"
+                        name="bio"
+                        rows="4"
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                        placeholder="Tell use about your character..."
+                    ></textarea>
+                </div>
+
+                <div>
+                    <label
+                        for="avatar_image"
+                        class="block text-sm font-medium text-gray-400 mb-2"
+                        >Avatar Image URL</label
+                    >
+                    <input
+                        type="url"
+                        id="avatar_image"
+                        name="avatar_image"
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                        placeholder="https://example.com/image.png"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">
+                        Direct link to an image file (PNG, JPG, etc.)
+                    </p>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button
+                        type="submit"
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-2 px-6 rounded-lg transition-all transform hover:scale-105"
+                    >
+                        Create Hero
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+</Layout>
