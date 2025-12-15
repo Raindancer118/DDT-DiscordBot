@@ -13,7 +13,7 @@ command = "npm run build"
 # Populate via `wrangler secret put DISCORD_CLIENT_SECRET`
 
 
-# DISCORD_REDIRECT_URI and DISCORD_CLIENT_ID should be set in Cloudflare Dashboard
+# DISCORD_REDIRECT_URI and CLIENT_ID should be set in Cloudflare Dashboard
 
 
 

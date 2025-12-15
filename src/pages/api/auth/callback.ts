@@ -20,9 +20,10 @@ export const GET: APIRoute = async ({ request, locals, cookies, redirect }) => {
     }
 
     // Exchange code for token
-    const CLIENT_ID = import.meta.env.CLIENT_ID;
-    const CLIENT_SECRET = import.meta.env.DISCORD_CLIENT_SECRET;
-    const REDIRECT_URI = import.meta.env.DISCORD_REDIRECT_URI;
+    const runtimeEnv = locals.runtime?.env || {};
+    const CLIENT_ID = runtimeEnv.CLIENT_ID;
+    const CLIENT_SECRET = runtimeEnv.DISCORD_CLIENT_SECRET;
+    const REDIRECT_URI = runtimeEnv.DISCORD_REDIRECT_URI;
 
     if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI) {
         return new Response('Server configuration error', { status: 500 });
