@@ -7,7 +7,7 @@ export async function handle(interaction, env, ctx) {
     return {
         type: 4,
         data: {
-            content: '🟢 Bot is online and running on Cloudflare Workers!'
+            content: 'Online! 🫡'
         }
     };
 }

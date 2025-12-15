@@ -11,3 +11,8 @@ command = "npm run build"
 # Populate via `wrangler secret put DISCORD_PUBLIC_KEY`
 # Populate via `wrangler secret put DISCORD_TOKEN`
 # Alternatively, set APPLICATION_ID for convenience when making follow-up requests.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "userdata"
+database_id = "49337cde-19f4-4b6e-a8ba-37ab602e518f"
