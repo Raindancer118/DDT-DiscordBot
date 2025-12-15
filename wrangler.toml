@@ -10,7 +10,12 @@ command = "npm run build"
 [vars]
 # Populate via `wrangler secret put DISCORD_PUBLIC_KEY`
 # Populate via `wrangler secret put DISCORD_TOKEN`
-# Alternatively, set APPLICATION_ID for convenience when making follow-up requests.
+# Populate via `wrangler secret put DISCORD_CLIENT_SECRET`
+
+
+# DISCORD_REDIRECT_URI and DISCORD_CLIENT_ID should be set in Cloudflare Dashboard
+
+
 
 [[d1_databases]]
 binding = "DB"
