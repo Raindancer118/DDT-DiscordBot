@@ -14,6 +14,8 @@ command = "npm run build"
 
 
 # DISCORD_REDIRECT_URI and CLIENT_ID should be set in Cloudflare Dashboard
+DISCORD_REDIRECT_URI = "https://dc.bot.dumbdecision.de/api/auth/callback"
+CLIENT_ID = "1423246872675352596"
 
 
 
