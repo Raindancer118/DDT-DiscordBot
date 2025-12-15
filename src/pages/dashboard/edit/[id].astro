@@ -1,0 +1,156 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import type { Character } from "../../../lib/db";
+
+const db = Astro.locals.runtime.env.DB;
+const userIdCookie = Astro.cookies.get("user_id");
+
+if (!userIdCookie) {
+    return Astro.redirect("/login");
+}
+
+const userId = userIdCookie.number();
+const characterId = Astro.params.id;
+
+// Fetch the character to edit
+const character = await db
+    .prepare("SELECT * FROM characters WHERE id = ? AND user_id = ?")
+    .bind(characterId, userId)
+    .first<Character>();
+
+if (!character) {
+    return Astro.redirect("/dashboard");
+}
+
+let errorMessage = "";
+let successMessage = "";
+
+if (Astro.request.method === "POST") {
+    try {
+        const formData = await Astro.request.formData();
+        const name = formData.get("name") as string;
+        const bio = formData.get("bio") as string;
+        const status = formData.get("status") as string;
+
+        if (!name) {
+            throw new Error("Name is required");
+        }
+
+        const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+
+        await db
+            .prepare(
+                "UPDATE characters SET name = ?, bio = ?, status = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+            )
+            .bind(name, bio || null, status || "active", now, characterId, userId)
+            .run();
+
+        return Astro.redirect("/dashboard");
+    } catch (error) {
+        console.error("Error updating character:", error);
+        errorMessage = error instanceof Error ? error.message : "An error occurred";
+    }
+}
+---
+
+<Layout title="Edit Character - DDT Bot">
+    <div
+        class="min-h-screen bg-gray-900 text-white p-6 flex flex-col items-center"
+    >
+        <header class="w-full max-w-2xl mb-8 flex items-center justify-between">
+            <h1
+                class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600"
+            >
+                Edit Character
+            </h1>
+            <a
+                href="/dashboard"
+                class="text-gray-400 hover:text-white transition-colors"
+            >
+                &larr; Back to Dashboard
+            </a>
+        </header>
+
+        <main
+            class="w-full max-w-2xl bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-xl"
+        >
+            {errorMessage && (
+                <div class="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+                    {errorMessage}
+                </div>
+            )}
+            
+            {successMessage && (
+                <div class="mb-4 p-4 bg-green-900/50 border border-green-700 rounded-lg text-green-200">
+                    {successMessage}
+                </div>
+            )}
+
+            <form method="POST" class="space-y-6">
+                <div>
+                    <label
+                        for="name"
+                        class="block text-sm font-medium text-gray-400 mb-2"
+                        >Character Name *</label
+                    >
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        required
+                        value={character.name}
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                        placeholder="e.g. Sir Codes-a-Lot"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        for="bio"
+                        class="block text-sm font-medium text-gray-400 mb-2"
+                        >Bio / Description</label
+                    >
+                    <textarea
+                        id="bio"
+                        name="bio"
+                        rows="4"
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                        placeholder="Tell us about your character..."
+                    >{character.bio || ""}</textarea>
+                </div>
+
+                <div>
+                    <label
+                        for="status"
+                        class="block text-sm font-medium text-gray-400 mb-2"
+                        >Status</label
+                    >
+                    <select
+                        id="status"
+                        name="status"
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                    >
+                        <option value="active" selected={character.status === "active"}>Active</option>
+                        <option value="inactive" selected={character.status === "inactive"}>Inactive</option>
+                        <option value="archived" selected={character.status === "archived"}>Archived</option>
+                    </select>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-4">
+                    <a
+                        href="/dashboard"
+                        class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-all"
+                    >
+                        Cancel
+                    </a>
+                    <button
+                        type="submit"
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-2 px-6 rounded-lg transition-all transform hover:scale-105"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+</Layout>
