@@ -6,14 +6,14 @@ import Layout from "../layouts/Layout.astro";
 // For this MVP, we will simulate the "Sign in with Discord" button.
 
 const runtimeEnv = Astro.locals.runtime?.env || {};
-const DISCORD_CLIENT_ID =
-    runtimeEnv.DISCORD_CLIENT_ID ||
-    import.meta.env.DISCORD_CLIENT_ID ||
-    "123456789";
-const REDIRECT_URI =
-    runtimeEnv.DISCORD_REDIRECT_URI ||
-    import.meta.env.DISCORD_REDIRECT_URI ||
-    "http://localhost:4321/api/auth/callback";
+const runtimeEnv = Astro.locals.runtime?.env || {};
+
+const DISCORD_CLIENT_ID = runtimeEnv.DISCORD_CLIENT_ID;
+const REDIRECT_URI = runtimeEnv.DISCORD_REDIRECT_URI;
+
+if (!DISCORD_CLIENT_ID || !REDIRECT_URI) {
+    throw new Error("Missing DISCORD_CLIENT_ID or DISCORD_REDIRECT_URI in environment variables.");
+}
 
 const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20email`;
 ---
@@ -29,7 +29,11 @@ const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DI
                 Login via DumbDecision
             </h1>
 
-            <form id="login-form" class="space-y-4 mb-6">
+            <form
+                id="login-form"
+                class="space-y-4 mb-6"
+                data-discord-url={discordLoginUrl}
+            >
                 <div>
                     <label class="block text-sm font-medium text-gray-400 mb-1"
                         >Email</label
@@ -57,7 +61,7 @@ const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DI
                     type="submit"
                     class="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded font-semibold transition-colors"
                 >
-                    Log In
+                    Log In & Link Discord
                 </button>
             </form>
 
@@ -120,7 +124,12 @@ const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DI
             const data = await res.json();
 
             if (res.ok) {
-                window.location.href = "/dashboard";
+                const discordUrl = form.dataset.discordUrl;
+                if (discordUrl) {
+                    window.location.href = discordUrl;
+                } else {
+                    window.location.href = "/dashboard";
+                }
             } else {
                 errorMsg!.textContent = data.error || "Login failed";
                 errorMsg!.classList.remove("hidden");
