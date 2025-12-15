@@ -5,15 +5,20 @@ import Layout from "../layouts/Layout.astro";
 // or redirect to a specific /api/auth/discord endpoint.
 // For this MVP, we will simulate the "Sign in with Discord" button.
 
-const DISCORD_CLIENT_ID = import.meta.env.DISCORD_CLIENT_ID || "123456789";
+const runtimeEnv = Astro.locals.runtime?.env || {};
+const DISCORD_CLIENT_ID =
+    runtimeEnv.DISCORD_CLIENT_ID ||
+    import.meta.env.DISCORD_CLIENT_ID ||
+    "123456789";
 const REDIRECT_URI =
+    runtimeEnv.DISCORD_REDIRECT_URI ||
     import.meta.env.DISCORD_REDIRECT_URI ||
     "http://localhost:4321/api/auth/callback";
 
 const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20email`;
 ---
 
-<Layout title="Login - DDT Bot">
+<Layout title="Login via DumbDecision">
     <main
         class="min-h-screen flex items-center justify-center bg-gray-900 text-white"
     >
@@ -21,7 +26,7 @@ const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DI
             class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full border border-gray-700"
         >
             <h1 class="text-3xl font-bold mb-6 text-center text-purple-400">
-                Inventory Manager
+                Login via DumbDecision
             </h1>
 
             <form id="login-form" class="space-y-4 mb-6">
