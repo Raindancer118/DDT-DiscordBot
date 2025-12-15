@@ -1,0 +1,47 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+// In a real implementation this would handle the OAuth callback code as well
+// or redirect to a specific /api/auth/discord endpoint.
+// For this MVP, we will simulate the "Sign in with Discord" button.
+
+const DISCORD_CLIENT_ID = import.meta.env.DISCORD_CLIENT_ID || "YOUR_CLIENT_ID";
+const REDIRECT_URI =
+    import.meta.env.DISCORD_REDIRECT_URI ||
+    "http://localhost:4321/auth/callback";
+
+const discordLoginUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20email`;
+---
+
+<Layout title="Login - DDT Bot">
+    <main
+        class="min-h-screen flex items-center justify-center bg-gray-900 text-white"
+    >
+        <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full">
+            <h1 class="text-3xl font-bold mb-6 text-center text-purple-400">
+                Inventory Manager
+            </h1>
+            <p class="mb-8 text-gray-300 text-center">
+                Link your Discord account to manage your character inventories.
+            </p>
+
+            <div class="space-y-4">
+                <a
+                    href={discordLoginUrl}
+                    class="block w-full py-3 px-4 bg-[#5865F2] hover:bg-[#4752C4] rounded text-center font-semibold transition-colors"
+                >
+                    Sign in with Discord
+                </a>
+
+                <div class="text-center text-sm text-gray-500">
+                    Don't have a Dumb Decision account?
+                    <a
+                        href="https://dumbdecision.de/members"
+                        class="text-purple-400 hover:text-purple-300"
+                        target="_blank">Register here</a
+                    >
+                </div>
+            </div>
+        </div>
+    </main>
+</Layout>

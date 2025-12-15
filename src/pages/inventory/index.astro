@@ -1,0 +1,214 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// const { charId } = Astro.url.searchParams;
+// Mock Data
+const inventory = [
+    {
+        id: 1,
+        name: "Healing Potion",
+        quantity: 3,
+        icon: "🧪",
+        rarity: "common",
+        description: "Restores 1d4+2 HP.",
+    },
+    {
+        id: 2,
+        name: "Longsword +1",
+        quantity: 1,
+        icon: "⚔️",
+        rarity: "uncommon",
+        description: "A finely crafted blade.",
+    },
+];
+
+const availableItems = [
+    { id: 101, name: "Rations (1 day)", icon: "🍖", rarity: "common" },
+    { id: 102, name: "Torch", icon: "🔥", rarity: "common" },
+    { id: 103, name: "Rope (50ft)", icon: "➰", rarity: "common" },
+];
+---
+
+<Layout title="Inventory - DDT Bot">
+    <div class="flex h-screen bg-gray-900 text-white overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <a
+                    href="/dashboard"
+                    class="flex items-center text-gray-400 hover:text-white mb-4 transition-colors"
+                >
+                    &larr; Back to Dashboard
+                </a>
+                <h2 class="text-xl font-bold text-white">Character Name</h2>
+                <p class="text-sm text-gray-400">Inventory Management</p>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <a
+                    href="#"
+                    class="block px-4 py-2 rounded bg-purple-600 text-white font-medium"
+                    >Items</a
+                >
+                <a
+                    href="#"
+                    class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300 transition-colors"
+                    >Equipment (Coming Soon)</a
+                >
+                <a
+                    href="#"
+                    class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300 transition-colors"
+                    >Spells (Coming Soon)</a
+                >
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold">Inventory</h1>
+                <button
+                    id="add-item-btn"
+                    class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2"
+                >
+                    <span>+</span> Add Item
+                </button>
+            </header>
+
+            <!-- Inventory Grid -->
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            >
+                {
+                    inventory.map((item) => (
+                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-500 transition-colors group relative">
+                            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="text-gray-400 hover:text-red-400">
+                                    🗑️
+                                </button>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div class="text-4xl bg-gray-900 p-2 rounded-lg">
+                                    {item.icon}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg">
+                                        {item.name}
+                                    </h3>
+                                    <p class="text-xs text-purple-300 uppercase font-semibold tracking-wider mb-1">
+                                        {item.rarity}
+                                    </p>
+                                    <p class="text-sm text-gray-400 line-clamp-2">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between bg-gray-900 rounded p-2">
+                                <span class="text-xs text-gray-500 uppercase font-bold">
+                                    Quantity
+                                </span>
+                                <div class="flex items-center gap-3">
+                                    <button class="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
+                                        -
+                                    </button>
+                                    <span class="font-mono font-bold">
+                                        {item.quantity}
+                                    </span>
+                                    <button class="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </main>
+
+        <!-- Add Item Modal (Hidden by default) -->
+        <div
+            id="add-item-modal"
+            class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center"
+        >
+            <div
+                class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700 flex flex-col max-h-[80vh]"
+            >
+                <div
+                    class="p-6 border-b border-gray-700 flex justify-between items-center"
+                >
+                    <h2 class="text-2xl font-bold">Add Item to Inventory</h2>
+                    <button
+                        id="close-modal-btn"
+                        class="text-gray-400 hover:text-white text-2xl"
+                        >&times;</button
+                    >
+                </div>
+
+                <div class="p-6 flex-1 overflow-y-auto">
+                    <input
+                        type="text"
+                        placeholder="Search for an item..."
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 mb-6"
+                    />
+
+                    <div class="space-y-2">
+                        <h3
+                            class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
+                        >
+                            Common Items
+                        </h3>
+                        {
+                            availableItems.map((item) => (
+                                <div class="flex items-center justify-between p-3 bg-gray-900/50 rounded hover:bg-gray-700 transition-colors cursor-pointer border border-transparent hover:border-purple-500/50">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl">
+                                            {item.icon}
+                                        </span>
+                                        <span>{item.name}</span>
+                                    </div>
+                                    <button class="text-sm bg-purple-600 hover:bg-purple-500 px-3 py-1 rounded">
+                                        Add
+                                    </button>
+                                </div>
+                            ))
+                        }
+                    </div>
+
+                    <div class="mt-8 border-t border-gray-700 pt-6">
+                        <h3
+                            class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
+                        >
+                            Can't find it?
+                        </h3>
+                        <button
+                            class="w-full py-3 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-400 transition-colors"
+                        >
+                            Create Custom Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</Layout>
+
+<script>
+    const modal = document.getElementById("add-item-modal");
+    const openBtn = document.getElementById("add-item-btn");
+    const closeBtn = document.getElementById("close-modal-btn");
+
+    openBtn?.addEventListener("click", () => {
+        modal?.classList.remove("hidden");
+    });
+
+    closeBtn?.addEventListener("click", () => {
+        modal?.classList.add("hidden");
+    });
+
+    // Close on click outside
+    modal?.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            modal.classList.add("hidden");
+        }
+    });
+</script>
