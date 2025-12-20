@@ -10,11 +10,12 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { unlink } from 'fs/promises';
+import { tmpdir } from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const TEST_DB_PATH = '/tmp/test-starboard.db';
+const TEST_DB_PATH = join(tmpdir(), 'test-starboard.db');
 let db;
 let testsPassed = 0;
 let testsFailed = 0;

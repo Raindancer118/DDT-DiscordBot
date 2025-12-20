@@ -11,8 +11,17 @@ const __dirname = dirname(__filename);
 
 // Configuration
 const STARBOARD_CHANNEL_ID = process.env.STARBOARD_CHANNEL_ID;
-const STAR_THRESHOLD = parseInt(process.env.STAR_THRESHOLD || '3', 10);
+const STAR_THRESHOLD = Math.min(Math.max(parseInt(process.env.STAR_THRESHOLD || '3', 10), 1), 100);
 const STAR_EMOJI = '⭐';
+const STAR_COLOR_GOLD = 0xFFD700;  // 10+ stars
+const STAR_COLOR_ORANGE = 0xFFA500;  // 5-9 stars
+const STAR_COLOR_YELLOW = 0xFFFF00;  // 3-4 stars
+const NUMBER_EMOJIS = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
+
+// Validate configuration
+if (STAR_THRESHOLD !== parseInt(process.env.STAR_THRESHOLD || '3', 10)) {
+  log.warn(`STAR_THRESHOLD clamped to valid range: ${STAR_THRESHOLD}`);
+}
 
 // Initialize database
 let db;
@@ -93,7 +102,7 @@ function createStarboardEmbed(message, starCount) {
       iconURL: message.author.displayAvatarURL()
     })
     .setDescription(message.content || '*[No text content]*')
-    .setColor(starCount >= 10 ? 0xFFD700 : starCount >= 5 ? 0xFFA500 : 0xFFFF00)
+    .setColor(starCount >= 10 ? STAR_COLOR_GOLD : starCount >= 5 ? STAR_COLOR_ORANGE : STAR_COLOR_YELLOW)
     .addFields({
       name: 'Source',
       value: `[Jump to message](${message.url})`,
@@ -134,8 +143,7 @@ async function updateBotReactions(message, starCount, isPosted) {
       const starsNeeded = STAR_THRESHOLD - starCount;
       if (starsNeeded > 0 && starsNeeded <= 9) {
         // React with number emoji showing stars left
-        const numberEmojis = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
-        await message.react(numberEmojis[starsNeeded]);
+        await message.react(NUMBER_EMOJIS[starsNeeded]);
       }
     }
   } catch (error) {
