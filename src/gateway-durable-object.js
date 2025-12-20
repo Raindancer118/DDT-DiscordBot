@@ -29,6 +29,11 @@ export class DiscordGateway {
     this.sequenceNumber = null;
   }
 
+  // Helper to get validated threshold
+  getThreshold() {
+    return Math.min(Math.max(parseInt(this.env.STAR_THRESHOLD || '3', 10), 1), 100);
+  }
+
   async fetch(request) {
     // Initialize Gateway connection if not already connected
     if (!this.ws) {
@@ -61,12 +66,12 @@ export class DiscordGateway {
         await this.handleMessage(event);
       });
 
-      this.ws.addEventListener('close', () => {
+      this.ws.addEventListener('close', async () => {
         console.log('Discord Gateway WebSocket closed');
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         this.ws = null;
-        // Attempt reconnection after a delay
-        setTimeout(() => this.connect(), 5000);
+        // Use state.storage alarm for reconnection instead of setTimeout
+        await this.state.storage.setAlarm(Date.now() + 5000);
       });
 
       this.ws.addEventListener('error', (error) => {
@@ -76,6 +81,12 @@ export class DiscordGateway {
     } catch (error) {
       console.error('Failed to connect to Discord Gateway:', error);
     }
+  }
+
+  // Handle alarm for reconnection
+  async alarm() {
+    console.log('Alarm triggered - attempting reconnection');
+    await this.connect();
   }
 
   async handleMessage(event) {
@@ -181,7 +192,7 @@ export class DiscordGateway {
     const starCount = await this.countStars(channelId, messageId);
     await this.updateStarCount(messageId, starCount);
 
-    const threshold = Math.min(Math.max(parseInt(this.env.STAR_THRESHOLD || '3', 10), 1), 100);
+    const threshold = this.getThreshold();
 
     // Update bot reactions
     await this.updateBotReactions(channelId, messageId, starCount, threshold, !!entry.starboard_message_id);
@@ -210,7 +221,7 @@ export class DiscordGateway {
     const starCount = await this.countStars(channelId, messageId);
     await this.updateStarCount(messageId, starCount);
 
-    const threshold = Math.min(Math.max(parseInt(this.env.STAR_THRESHOLD || '3', 10), 1), 100);
+    const threshold = this.getThreshold();
 
     await this.updateBotReactions(channelId, messageId, starCount, threshold, !!entry.starboard_message_id);
 
