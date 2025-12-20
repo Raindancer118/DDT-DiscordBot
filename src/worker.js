@@ -1,5 +1,8 @@
 import nacl from 'tweetnacl';
 import { commandHandlers } from './commands/index.js';
+import { DiscordGateway } from './gateway-durable-object.js';
+
+export { DiscordGateway };
 
 const encoder = new TextEncoder();
 
@@ -75,6 +78,15 @@ async function handleCommand(interaction, env, ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    
+    // Initialize Gateway Durable Object on first request
+    if (env.DISCORD_GATEWAY) {
+      const id = env.DISCORD_GATEWAY.idFromName('main-gateway');
+      const stub = env.DISCORD_GATEWAY.get(id);
+      // Trigger connection (fire and forget)
+      ctx.waitUntil(stub.fetch(new Request('https://gateway/connect')));
+    }
+    
     if (request.method === 'GET') {
       if (url.pathname === '/status') {
         let discordStatus = 'Unknown';

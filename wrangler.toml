@@ -11,11 +11,13 @@ command = "npm run build"
 # Populate via `wrangler secret put DISCORD_PUBLIC_KEY`
 # Populate via `wrangler secret put DISCORD_TOKEN`
 # Populate via `wrangler secret put DISCORD_CLIENT_SECRET`
+# Populate via `wrangler secret put STARBOARD_CHANNEL_ID`
 
 
 # DISCORD_REDIRECT_URI and CLIENT_ID should be set in Cloudflare Dashboard
 DISCORD_REDIRECT_URI = "https://dc.bot.dumbdecision.de/api/auth/callback"
 CLIENT_ID = "1423246872675352596"
+STAR_THRESHOLD = "3"
 
 
 
@@ -23,3 +25,12 @@ CLIENT_ID = "1423246872675352596"
 binding = "DB"
 database_name = "userdata"
 database_id = "49337cde-19f4-4b6e-a8ba-37ab602e518f"
+
+[[durable_objects.bindings]]
+name = "DISCORD_GATEWAY"
+class_name = "DiscordGateway"
+script_name = "dumbdecision-ttrpg-bot"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["DiscordGateway"]
