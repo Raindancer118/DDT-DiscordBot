@@ -166,6 +166,7 @@ export class DiscordGateway {
 
     const messageId = data.message_id;
     const channelId = data.channel_id;
+    const guildId = data.guild_id;
     const userId = data.user_id;
 
     // Get bot user
@@ -173,7 +174,7 @@ export class DiscordGateway {
     if (userId === botUser.id) return;
 
     // Get or create entry
-    let entry = await this.getStarboardEntry(messageId);
+    let entry = await this.getStarboardEntry(guildId, messageId);
     
     // Fetch the message
     const message = await this.fetchMessage(channelId, messageId);
@@ -184,13 +185,13 @@ export class DiscordGateway {
     if (this.env.STARBOARD_CHANNEL_ID && channelId === this.env.STARBOARD_CHANNEL_ID) return;
 
     if (!entry) {
-      await this.createStarboardEntry(messageId, channelId, message.author.id);
-      entry = await this.getStarboardEntry(messageId);
+      await this.createStarboardEntry(guildId, messageId, channelId);
+      entry = await this.getStarboardEntry(guildId, messageId);
     }
 
     // Count stars
     const starCount = await this.countStars(channelId, messageId);
-    await this.updateStarCount(messageId, starCount);
+    await this.updateStarCount(guildId, messageId, starCount);
 
     const threshold = this.getThreshold();
 
@@ -201,7 +202,7 @@ export class DiscordGateway {
     if (starCount >= threshold && !entry.starboard_message_id && this.env.STARBOARD_CHANNEL_ID) {
       const starboardMessageId = await this.postToStarboard(message, starCount);
       if (starboardMessageId) {
-        await this.updateStarboardMessageId(messageId, starboardMessageId);
+        await this.updateStarboardMessageId(guildId, messageId, starboardMessageId);
         await this.updateBotReactions(channelId, messageId, starCount, threshold, true);
       }
     } else if (entry.starboard_message_id && this.env.STARBOARD_CHANNEL_ID) {
@@ -214,12 +215,13 @@ export class DiscordGateway {
 
     const messageId = data.message_id;
     const channelId = data.channel_id;
+    const guildId = data.guild_id;
 
-    const entry = await this.getStarboardEntry(messageId);
+    const entry = await this.getStarboardEntry(guildId, messageId);
     if (!entry) return;
 
     const starCount = await this.countStars(channelId, messageId);
-    await this.updateStarCount(messageId, starCount);
+    await this.updateStarCount(guildId, messageId, starCount);
 
     const threshold = this.getThreshold();
 
@@ -234,29 +236,29 @@ export class DiscordGateway {
   }
 
   // Database operations
-  async getStarboardEntry(messageId) {
+  async getStarboardEntry(guildId, messageId) {
     const result = await this.env.DB.prepare(
-      'SELECT * FROM starboard_messages WHERE message_id = ?'
-    ).bind(messageId).first();
+      'SELECT * FROM starboard_messages WHERE guild_id = ? AND original_message_id = ?'
+    ).bind(guildId, messageId).first();
     return result;
   }
 
-  async createStarboardEntry(messageId, channelId, authorId) {
+  async createStarboardEntry(guildId, messageId, channelId) {
     await this.env.DB.prepare(
-      'INSERT INTO starboard_messages (message_id, channel_id, author_id, star_count) VALUES (?, ?, ?, 0)'
-    ).bind(messageId, channelId, authorId).run();
+      'INSERT INTO starboard_messages (guild_id, original_message_id, original_channel_id, star_count) VALUES (?, ?, ?, 0)'
+    ).bind(guildId, messageId, channelId).run();
   }
 
-  async updateStarCount(messageId, starCount) {
+  async updateStarCount(guildId, messageId, starCount) {
     await this.env.DB.prepare(
-      'UPDATE starboard_messages SET star_count = ?, updated_at = CURRENT_TIMESTAMP WHERE message_id = ?'
-    ).bind(starCount, messageId).run();
+      'UPDATE starboard_messages SET star_count = ? WHERE guild_id = ? AND original_message_id = ?'
+    ).bind(starCount, guildId, messageId).run();
   }
 
-  async updateStarboardMessageId(messageId, starboardMessageId) {
+  async updateStarboardMessageId(guildId, messageId, starboardMessageId) {
     await this.env.DB.prepare(
-      'UPDATE starboard_messages SET starboard_message_id = ?, updated_at = CURRENT_TIMESTAMP WHERE message_id = ?'
-    ).bind(starboardMessageId, messageId).run();
+      'UPDATE starboard_messages SET starboard_message_id = ? WHERE guild_id = ? AND original_message_id = ?'
+    ).bind(starboardMessageId, guildId, messageId).run();
   }
 
   // Discord API helpers

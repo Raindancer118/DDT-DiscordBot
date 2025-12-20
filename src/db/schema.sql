@@ -33,14 +33,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 -- Starboard tracking table
 CREATE TABLE IF NOT EXISTS starboard_messages (
-    message_id TEXT PRIMARY KEY,
-    channel_id TEXT NOT NULL,
-    author_id TEXT NOT NULL,
-    star_count INTEGER DEFAULT 0,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id TEXT NOT NULL,
+    original_message_id TEXT NOT NULL,
+    original_channel_id TEXT NOT NULL,
     starboard_message_id TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    star_count INTEGER DEFAULT 0,
+    UNIQUE(guild_id, original_message_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_starboard_channel ON starboard_messages(channel_id);
-CREATE INDEX IF NOT EXISTS idx_starboard_posted ON starboard_messages(starboard_message_id);

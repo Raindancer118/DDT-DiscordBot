@@ -63,9 +63,10 @@ try {
   const columns = db.prepare('PRAGMA table_info(starboard_messages)').all();
   const columnNames = columns.map(c => c.name);
   
-  assert(columnNames.includes('message_id'), 'message_id column exists');
-  assert(columnNames.includes('channel_id'), 'channel_id column exists');
-  assert(columnNames.includes('author_id'), 'author_id column exists');
+  assert(columnNames.includes('id'), 'id column exists');
+  assert(columnNames.includes('guild_id'), 'guild_id column exists');
+  assert(columnNames.includes('original_message_id'), 'original_message_id column exists');
+  assert(columnNames.includes('original_channel_id'), 'original_channel_id column exists');
   assert(columnNames.includes('star_count'), 'star_count column exists');
   assert(columnNames.includes('starboard_message_id'), 'starboard_message_id column exists');
   
@@ -78,18 +79,18 @@ try {
 console.log('\nTest 2: Insert Starboard Entry');
 try {
   const insertStmt = db.prepare(`
-    INSERT INTO starboard_messages (message_id, channel_id, author_id, star_count)
+    INSERT INTO starboard_messages (guild_id, original_message_id, original_channel_id, star_count)
     VALUES (?, ?, ?, ?)
   `);
   
-  insertStmt.run('123456789', '987654321', '111222333', 0);
+  insertStmt.run('guild123', '123456789', '987654321', 0);
   
-  const entry = db.prepare('SELECT * FROM starboard_messages WHERE message_id = ?').get('123456789');
+  const entry = db.prepare('SELECT * FROM starboard_messages WHERE guild_id = ? AND original_message_id = ?').get('guild123', '123456789');
   
   assert(entry !== undefined, 'Entry inserted successfully');
-  assertEqual(entry.message_id, '123456789', 'message_id is correct');
-  assertEqual(entry.channel_id, '987654321', 'channel_id is correct');
-  assertEqual(entry.author_id, '111222333', 'author_id is correct');
+  assertEqual(entry.guild_id, 'guild123', 'guild_id is correct');
+  assertEqual(entry.original_message_id, '123456789', 'original_message_id is correct');
+  assertEqual(entry.original_channel_id, '987654321', 'original_channel_id is correct');
   assertEqual(entry.star_count, 0, 'star_count initialized to 0');
   assert(entry.starboard_message_id === null, 'starboard_message_id is null initially');
   
@@ -104,12 +105,12 @@ try {
   const updateStmt = db.prepare(`
     UPDATE starboard_messages 
     SET star_count = ? 
-    WHERE message_id = ?
+    WHERE guild_id = ? AND original_message_id = ?
   `);
   
-  updateStmt.run(5, '123456789');
+  updateStmt.run(5, 'guild123', '123456789');
   
-  const entry = db.prepare('SELECT * FROM starboard_messages WHERE message_id = ?').get('123456789');
+  const entry = db.prepare('SELECT * FROM starboard_messages WHERE guild_id = ? AND original_message_id = ?').get('guild123', '123456789');
   
   assertEqual(entry.star_count, 5, 'star_count updated to 5');
   
@@ -124,12 +125,12 @@ try {
   const updateStmt = db.prepare(`
     UPDATE starboard_messages 
     SET starboard_message_id = ? 
-    WHERE message_id = ?
+    WHERE guild_id = ? AND original_message_id = ?
   `);
   
-  updateStmt.run('999888777', '123456789');
+  updateStmt.run('999888777', 'guild123', '123456789');
   
-  const entry = db.prepare('SELECT * FROM starboard_messages WHERE message_id = ?').get('123456789');
+  const entry = db.prepare('SELECT * FROM starboard_messages WHERE guild_id = ? AND original_message_id = ?').get('guild123', '123456789');
   
   assertEqual(entry.starboard_message_id, '999888777', 'starboard_message_id updated');
   
@@ -142,19 +143,19 @@ try {
 console.log('\nTest 5: Multiple Entries');
 try {
   const insertStmt = db.prepare(`
-    INSERT INTO starboard_messages (message_id, channel_id, author_id, star_count)
+    INSERT INTO starboard_messages (guild_id, original_message_id, original_channel_id, star_count)
     VALUES (?, ?, ?, ?)
   `);
   
-  insertStmt.run('msg1', 'chan1', 'user1', 1);
-  insertStmt.run('msg2', 'chan1', 'user2', 3);
-  insertStmt.run('msg3', 'chan2', 'user1', 5);
+  insertStmt.run('guild123', 'msg1', 'chan1', 1);
+  insertStmt.run('guild123', 'msg2', 'chan1', 3);
+  insertStmt.run('guild456', 'msg3', 'chan2', 5);
   
   const allEntries = db.prepare('SELECT * FROM starboard_messages').all();
   
   assertEqual(allEntries.length, 4, 'Total of 4 entries (including previous test)');
   
-  const chan1Entries = db.prepare('SELECT * FROM starboard_messages WHERE channel_id = ?').all('chan1');
+  const chan1Entries = db.prepare('SELECT * FROM starboard_messages WHERE original_channel_id = ?').all('chan1');
   assertEqual(chan1Entries.length, 2, 'Channel filter works correctly');
   
 } catch (err) {
@@ -162,18 +163,23 @@ try {
   testsFailed++;
 }
 
-// Test 6: Index Performance
-console.log('\nTest 6: Index Performance');
+// Test 6: UNIQUE Constraint
+console.log('\nTest 6: UNIQUE Constraint');
 try {
-  const indexes = db.prepare(`
-    SELECT name FROM sqlite_master 
-    WHERE type='index' AND tbl_name='starboard_messages'
-  `).all();
+  const insertStmt = db.prepare(`
+    INSERT INTO starboard_messages (guild_id, original_message_id, original_channel_id, star_count)
+    VALUES (?, ?, ?, ?)
+  `);
   
-  const indexNames = indexes.map(i => i.name);
+  // Try to insert duplicate guild_id + original_message_id
+  let errorCaught = false;
+  try {
+    insertStmt.run('guild123', '123456789', '987654321', 0);
+  } catch (e) {
+    errorCaught = true;
+  }
   
-  assert(indexNames.some(n => n.includes('channel')), 'Channel index exists');
-  assert(indexNames.some(n => n.includes('posted') || n.includes('starboard')), 'Starboard message index exists');
+  assert(errorCaught, 'UNIQUE constraint prevents duplicate guild_id + original_message_id');
   
 } catch (err) {
   console.error('  ✗ Index check failed:', err.message);
