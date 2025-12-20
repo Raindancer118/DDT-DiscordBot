@@ -10,7 +10,9 @@
     "preview": "astro preview",
     "deploy": "npm run build && wrangler deploy",
     "register": "node src/register-commands.js",
-    "bot": "node src/bot.js"
+    "bot": "node src/bot.js",
+    "validate-starboard": "node src/validate-starboard.js",
+    "test-starboard": "node src/test-starboard.js"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",
