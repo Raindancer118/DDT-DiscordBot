@@ -157,7 +157,7 @@ export async function handle(interaction, env, ctx) {
       }
     ],
     footer: {
-      text: userName + (isJackpot ? ' hit the JACKPOT!' : ''),
+      text: userName,
     },
     timestamp: new Date().toISOString()
   };

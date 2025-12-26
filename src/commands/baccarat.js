@@ -156,7 +156,7 @@ export async function handle(interaction, env, ctx) {
   } else if (bankerValue > playerValue) {
     outcome = 'banker';
     if (bet === 'banker') {
-      winnings = Math.floor(amount * 1.95); // 0.95:1 payout (5% commission)
+      winnings = amount + Math.floor(amount * 0.95); // Original bet + 0.95:1 winnings (5% commission)
     } else {
       winnings = -amount;
     }

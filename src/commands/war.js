@@ -93,7 +93,7 @@ export async function handle(interaction, env, ctx) {
       
       if (playerWarValue > dealerWarValue) {
         outcome = 'win_war';
-        winnings = betAmount * 3; // Win 2:1 on war
+        winnings = betAmount + (betAmount * 2); // Original bet + 2:1 winnings
       } else if (playerWarValue < dealerWarValue) {
         outcome = 'lose_war';
         winnings = -betAmount;
