@@ -162,18 +162,24 @@ const discordLink = await db
             const btn = this as HTMLButtonElement;
             const originalText = btn.textContent || '';
             
-            function showError(message: string) {
-                btn.textContent = '✗ Failed';
-                btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
-                btn.classList.add('bg-red-600');
-                alert(message);
-                
+            function setButtonState(text: string, bgClass: string) {
+                btn.textContent = text;
+                btn.classList.remove('bg-purple-600', 'hover:bg-purple-500', 'bg-green-600', 'bg-red-600');
+                btn.classList.add(bgClass);
+            }
+            
+            function resetButton() {
                 setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.classList.remove('bg-red-600');
-                    btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+                    setButtonState(originalText, 'bg-purple-600');
+                    btn.classList.add('hover:bg-purple-500');
                     btn.disabled = false;
                 }, 2000);
+            }
+            
+            function showError(message: string) {
+                setButtonState('✗ Failed', 'bg-red-600');
+                alert(message);
+                resetButton();
             }
             
             try {
@@ -191,18 +197,8 @@ const discordLink = await db
                 const data = await response.json();
                 
                 if (response.ok && data.success) {
-                    // Show success message
-                    btn.textContent = '✓ Synced!';
-                    btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
-                    btn.classList.add('bg-green-600');
-                    
-                    // Reset after 2 seconds
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                        btn.classList.remove('bg-green-600');
-                        btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
-                        btn.disabled = false;
-                    }, 2000);
+                    setButtonState('✓ Synced!', 'bg-green-600');
+                    resetButton();
                 } else {
                     showError(`Failed to sync commands: ${data.error || 'Unknown error'}`);
                 }

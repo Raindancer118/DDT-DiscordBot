@@ -1,11 +1,10 @@
-
 import type { APIRoute } from 'astro';
 import { commandDefinitions } from '../../../commands/index.js';
 
 export const POST: APIRoute = async ({ locals, cookies }) => {
     // Check authentication
     const userId = cookies.get('user_id')?.number();
-    if (!userId) {
+    if (!userId || isNaN(userId) || userId <= 0) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
             status: 401,
             headers: { 'Content-Type': 'application/json' }
