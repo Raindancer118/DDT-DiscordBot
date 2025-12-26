@@ -162,6 +162,20 @@ const discordLink = await db
             const btn = this as HTMLButtonElement;
             const originalText = btn.textContent || '';
             
+            function showError(message: string) {
+                btn.textContent = '✗ Failed';
+                btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
+                btn.classList.add('bg-red-600');
+                alert(message);
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('bg-red-600');
+                    btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+                    btn.disabled = false;
+                }, 2000);
+            }
+            
             try {
                 // Disable button and show loading state
                 btn.disabled = true;
@@ -190,36 +204,10 @@ const discordLink = await db
                         btn.disabled = false;
                     }, 2000);
                 } else {
-                    // Show error message
-                    btn.textContent = '✗ Failed';
-                    btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
-                    btn.classList.add('bg-red-600');
-                    
-                    alert(`Failed to sync commands: ${data.error || 'Unknown error'}`);
-                    
-                    // Reset after 2 seconds
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                        btn.classList.remove('bg-red-600');
-                        btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
-                        btn.disabled = false;
-                    }, 2000);
+                    showError(`Failed to sync commands: ${data.error || 'Unknown error'}`);
                 }
             } catch (error) {
-                // Show error message
-                btn.textContent = '✗ Error';
-                btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
-                btn.classList.add('bg-red-600');
-                
-                alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                
-                // Reset after 2 seconds
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.classList.remove('bg-red-600');
-                    btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
-                    btn.disabled = false;
-                }, 2000);
+                showError(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         });
     </script>
