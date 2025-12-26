@@ -58,6 +58,12 @@ const discordLink = await db
                         </a>
                     )
                 }
+                <button
+                    id="syncCommandsBtn"
+                    class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Sync Commands
+                </button>
                 <form action="/api/auth/logout" method="POST">
                     <button
                         type="submit"
@@ -150,4 +156,71 @@ const discordLink = await db
             </div>
         </main>
     </div>
+
+    <script>
+        document.getElementById('syncCommandsBtn')?.addEventListener('click', async function() {
+            const btn = this as HTMLButtonElement;
+            const originalText = btn.textContent || '';
+            
+            try {
+                // Disable button and show loading state
+                btn.disabled = true;
+                btn.textContent = 'Syncing...';
+                
+                const response = await fetch('/api/commands/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Show success message
+                    btn.textContent = '✓ Synced!';
+                    btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
+                    btn.classList.add('bg-green-600');
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.classList.remove('bg-green-600');
+                        btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+                        btn.disabled = false;
+                    }, 2000);
+                } else {
+                    // Show error message
+                    btn.textContent = '✗ Failed';
+                    btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
+                    btn.classList.add('bg-red-600');
+                    
+                    alert(`Failed to sync commands: ${data.error || 'Unknown error'}`);
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.classList.remove('bg-red-600');
+                        btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+                        btn.disabled = false;
+                    }, 2000);
+                }
+            } catch (error) {
+                // Show error message
+                btn.textContent = '✗ Error';
+                btn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
+                btn.classList.add('bg-red-600');
+                
+                alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('bg-red-600');
+                    btn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+                    btn.disabled = false;
+                }, 2000);
+            }
+        });
+    </script>
 </Layout>
