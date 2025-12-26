@@ -58,6 +58,12 @@ const discordLink = await db
                         </a>
                     )
                 }
+                <button
+                    id="syncCommandsBtn"
+                    class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Sync Commands
+                </button>
                 <form action="/api/auth/logout" method="POST">
                     <button
                         type="submit"
@@ -150,4 +156,56 @@ const discordLink = await db
             </div>
         </main>
     </div>
+
+    <script>
+        document.getElementById('syncCommandsBtn')?.addEventListener('click', async function() {
+            const btn = this as HTMLButtonElement;
+            const originalText = btn.textContent || '';
+            const BG_CLASSES = ['bg-purple-600', 'hover:bg-purple-500', 'bg-green-600', 'bg-red-600'];
+            
+            function setButtonState(text: string, bgClass: string) {
+                btn.textContent = text;
+                btn.classList.remove(...BG_CLASSES);
+                btn.classList.add(bgClass);
+            }
+            
+            function resetButton() {
+                setTimeout(() => {
+                    setButtonState(originalText, 'bg-purple-600');
+                    btn.classList.add('hover:bg-purple-500');
+                    btn.disabled = false;
+                }, 2000);
+            }
+            
+            function showError(message: string) {
+                setButtonState('✗ Failed', 'bg-red-600');
+                alert(message);
+                resetButton();
+            }
+            
+            try {
+                // Disable button and show loading state
+                btn.disabled = true;
+                btn.textContent = 'Syncing...';
+                
+                const response = await fetch('/api/commands/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    setButtonState('✓ Synced!', 'bg-green-600');
+                    resetButton();
+                } else {
+                    showError(`Failed to sync commands: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showError(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        });
+    </script>
 </Layout>
