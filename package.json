@@ -9,7 +9,8 @@
     "build": "astro build && echo '_worker.js' > dist/.assetsignore",
     "preview": "astro preview",
     "deploy": "npm run build && wrangler deploy",
-    "register": "node src/register-commands.js"
+    "register": "node src/register-commands.js",
+    "validate-module": "node scripts/validate-manifest.js"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",
