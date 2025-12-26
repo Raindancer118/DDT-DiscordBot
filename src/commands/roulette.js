@@ -147,7 +147,7 @@ function formatNumber(number) {
   return number.toString();
 }
 
-export async function handle(interaction) {
+export async function handle(interaction, env, ctx) {
   const options = interaction.data.options || [];
   const bet = options.find(o => o.name === 'bet')?.value;
   const amount = options.find(o => o.name === 'amount')?.value || 10;

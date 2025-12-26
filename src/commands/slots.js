@@ -104,7 +104,7 @@ function calculatePayout(reels, betAmount) {
   };
 }
 
-export async function handle(interaction) {
+export async function handle(interaction, env, ctx) {
   const options = interaction.data.options || [];
   const betAmount = options.find(o => o.name === 'bet')?.value || 10;
   

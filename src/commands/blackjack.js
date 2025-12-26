@@ -99,7 +99,7 @@ function determineWinner(playerValue, dealerValue, playerBlackjack, dealerBlackj
   return { result: 'push', message: 'Push (tie).' };
 }
 
-export async function handle(interaction) {
+export async function handle(interaction, env, ctx) {
   const options = interaction.data.options || [];
   const betAmount = options.find(o => o.name === 'bet')?.value || 10;
   

@@ -5,8 +5,11 @@ import { definition as loginDefinition, handle as handleLogin } from './login.js
 import { definition as coinflipDefinition, handle as handleCoinflip } from './coinflip.js';
 import { definition as rouletteDefinition, handle as handleRoulette } from './roulette.js';
 import { definition as slotsDefinition, handle as handleSlots } from './slots.js';
-import { definition as blackjackDefinition, handle as handleBlackjack } from './blackjack.js';
 import { definition as diceDefinition, handle as handleDice } from './dice.js';
+import { definition as blackjackDefinition, handle as handleBlackjack } from './blackjack.js';
+import { definition as pokerDefinition, handle as handlePoker } from './poker.js';
+import { definition as baccaratDefinition, handle as handleBaccarat } from './baccarat.js';
+import { definition as warDefinition, handle as handleWar } from './war.js';
 
 export const commandDefinitions = [
   dhDefinition,
@@ -16,8 +19,11 @@ export const commandDefinitions = [
   coinflipDefinition,
   rouletteDefinition,
   slotsDefinition,
+  diceDefinition,
   blackjackDefinition,
-  diceDefinition
+  pokerDefinition,
+  baccaratDefinition,
+  warDefinition
 ];
 
 export const commandHandlers = {
@@ -28,6 +34,9 @@ export const commandHandlers = {
   coinflip: handleCoinflip,
   roulette: handleRoulette,
   slots: handleSlots,
+  dice: handleDice,
   blackjack: handleBlackjack,
-  dice: handleDice
+  poker: handlePoker,
+  baccarat: handleBaccarat,
+  war: handleWar
 };

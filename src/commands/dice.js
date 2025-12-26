@@ -58,20 +58,6 @@ function checkWin(bet, rolls) {
   
   // Named bets
   switch (betLower) {
-    case 'seven':
-    case '7':
-      if (total === 7) {
-        return { win: true, payout: 4, type: 'Seven' };
-      }
-      return { win: false, payout: 0, type: 'Seven' };
-    
-    case 'eleven':
-    case '11':
-      if (total === 11) {
-        return { win: true, payout: 15, type: 'Eleven' };
-      }
-      return { win: false, payout: 0, type: 'Eleven' };
-    
     case 'craps':
       if (total === 2 || total === 3 || total === 12) {
         return { win: true, payout: 7, type: 'Craps (2, 3, 12)' };
@@ -138,7 +124,7 @@ function checkWin(bet, rolls) {
   }
 }
 
-export async function handle(interaction) {
+export async function handle(interaction, env, ctx) {
   const options = interaction.data.options || [];
   const bet = options.find(o => o.name === 'bet')?.value;
   const amount = options.find(o => o.name === 'amount')?.value || 10;
