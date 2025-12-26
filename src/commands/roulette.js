@@ -23,12 +23,6 @@ export const definition = {
   description: 'Play roulette with various betting options',
   options: [
     {
-      type: 3,
-      name: 'bet',
-      description: 'Your bet (e.g., "17", "red", "odd", "1-18", "dozen1", "column1")',
-      required: true
-    },
-    {
       type: 4,
       name: 'amount',
       description: 'Amount to bet (for display purposes)',
@@ -149,24 +143,134 @@ function formatNumber(number) {
 
 export async function handle(interaction, env, ctx) {
   const options = interaction.data.options || [];
-  const bet = options.find(o => o.name === 'bet')?.value;
   const amount = options.find(o => o.name === 'amount')?.value || 10;
-  
-  if (!bet) {
-    return {
-      type: 4,
-      data: {
-        content: '❌ Please specify a bet!',
-        flags: EPHEMERAL_FLAG
-      }
-    };
-  }
   
   const userName = interaction.member?.nick
     || interaction.member?.user?.global_name
     || interaction.member?.user?.username
     || interaction.user?.username
     || 'Player';
+  
+  // Create select menu with betting options
+  return {
+    type: 4,
+    data: {
+      content: `🎰 **${userName}**, choose your bet! (Betting ${amount} coins)`,
+      components: [
+        {
+          type: 1, // Action Row
+          components: [
+            {
+              type: 3, // String Select
+              custom_id: `roulette_bet:${amount}`,
+              placeholder: 'Choose your bet type...',
+              options: [
+                {
+                  label: '🔴 Red',
+                  value: 'red',
+                  description: 'Bet on red numbers (1:1 payout)'
+                },
+                {
+                  label: '⚫ Black',
+                  value: 'black',
+                  description: 'Bet on black numbers (1:1 payout)'
+                },
+                {
+                  label: '🟢 Green (0 or 00)',
+                  value: 'green',
+                  description: 'Bet on green (35:1 payout)'
+                },
+                {
+                  label: '🔢 Even',
+                  value: 'even',
+                  description: 'Bet on even numbers (1:1 payout)'
+                },
+                {
+                  label: '🔢 Odd',
+                  value: 'odd',
+                  description: 'Bet on odd numbers (1:1 payout)'
+                },
+                {
+                  label: '📉 Low (1-18)',
+                  value: '1-18',
+                  description: 'Bet on 1-18 (1:1 payout)'
+                },
+                {
+                  label: '📈 High (19-36)',
+                  value: '19-36',
+                  description: 'Bet on 19-36 (1:1 payout)'
+                },
+                {
+                  label: '🎲 1st Dozen (1-12)',
+                  value: 'dozen1',
+                  description: 'Bet on 1-12 (2:1 payout)'
+                },
+                {
+                  label: '🎲 2nd Dozen (13-24)',
+                  value: 'dozen2',
+                  description: 'Bet on 13-24 (2:1 payout)'
+                },
+                {
+                  label: '🎲 3rd Dozen (25-36)',
+                  value: 'dozen3',
+                  description: 'Bet on 25-36 (2:1 payout)'
+                },
+                {
+                  label: '📊 1st Column',
+                  value: 'column1',
+                  description: 'Bet on 1st column (2:1 payout)'
+                },
+                {
+                  label: '📊 2nd Column',
+                  value: 'column2',
+                  description: 'Bet on 2nd column (2:1 payout)'
+                },
+                {
+                  label: '📊 3rd Column',
+                  value: 'column3',
+                  description: 'Bet on 3rd column (2:1 payout)'
+                },
+                {
+                  label: '🎯 Specific Number (0-36)',
+                  value: 'number',
+                  description: 'Choose a specific number (35:1 payout)'
+                },
+                {
+                  label: '🎯 00 (Double Zero)',
+                  value: '00',
+                  description: 'Bet on 00 (35:1 payout)'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  };
+}
+
+export async function handleSelectMenu(interaction, customId, selectedValues, env, ctx) {
+  // Parse custom_id to get the bet amount
+  const [_, amountStr] = customId.split(':');
+  const amount = parseInt(amountStr) || 10;
+  const bet = selectedValues[0];
+  
+  const userName = interaction.member?.nick
+    || interaction.member?.user?.global_name
+    || interaction.member?.user?.username
+    || interaction.user?.username
+    || 'Player';
+  
+  // If user selected "number", show a follow-up message
+  if (bet === 'number') {
+    return {
+      type: 4,
+      data: {
+        content: '🎯 Please use the `/roulette` command again and type a specific number (0-36) in chat, or choose from the other betting options!',
+        flags: EPHEMERAL_FLAG
+      }
+    };
+  }
   
   // Spin the wheel
   const number = spinWheel();
@@ -206,15 +310,17 @@ export async function handle(interaction, env, ctx) {
       }
     ],
     footer: {
-      text: 'Bet types: number (0-36, 00), red, black, odd, even, 1-18, 19-36, dozen1-3, column1-3'
+      text: 'Use /roulette to play again!'
     },
     timestamp: new Date().toISOString()
   };
   
   return {
-    type: 4,
+    type: 7, // Update message
     data: {
-      embeds: [embed]
+      content: null,
+      embeds: [embed],
+      components: [] // Remove the select menu
     }
   };
 }

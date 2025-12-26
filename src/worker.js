@@ -1,5 +1,5 @@
 import nacl from 'tweetnacl';
-import { commandHandlers } from './commands/index.js';
+import { commandHandlers, componentHandlers } from './commands/index.js';
 
 const encoder = new TextEncoder();
 
@@ -66,6 +66,57 @@ async function handleCommand(interaction, env, ctx) {
       type: 4,
       data: {
         content: 'Something went wrong executing that command.',
+        flags: 1 << 6
+      }
+    }, 200);
+  }
+}
+
+async function handleMessageComponent(interaction, env, ctx) {
+  const customId = interaction.data?.custom_id;
+  if (!customId) {
+    return jsonResponse({
+      type: 4,
+      data: {
+        content: 'Invalid component interaction.',
+        flags: 1 << 6
+      }
+    });
+  }
+
+  // Parse custom_id to get the handler key (e.g., "roulette_bet:10" -> "roulette_bet")
+  const handlerKey = customId.split(':')[0];
+  const handler = componentHandlers[handlerKey];
+  
+  if (!handler) {
+    return jsonResponse({
+      type: 4,
+      data: {
+        content: `No handler implemented for component ${handlerKey}.`,
+        flags: 1 << 6
+      }
+    });
+  }
+
+  try {
+    const selectedValues = interaction.data?.values || [];
+    const result = await handler(interaction, customId, selectedValues, env, ctx);
+    if (!result) {
+      return jsonResponse({
+        type: 4,
+        data: {
+          content: 'Component interaction executed but returned no response.',
+          flags: 1 << 6
+        }
+      });
+    }
+    return jsonResponse(result);
+  } catch (err) {
+    console.error(`Error handling component ${handlerKey}`, err);
+    return jsonResponse({
+      type: 4,
+      data: {
+        content: 'Something went wrong executing that component interaction.',
         flags: 1 << 6
       }
     }, 200);
@@ -205,6 +256,10 @@ export default {
 
     if (interaction.type === 2) {
       return handleCommand(interaction, env, ctx);
+    }
+
+    if (interaction.type === 3) {
+      return handleMessageComponent(interaction, env, ctx);
     }
 
     console.warn('Unhandled interaction type', interaction.type);

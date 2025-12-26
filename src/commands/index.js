@@ -3,7 +3,7 @@ import { definition as clearDefinition, handle as handleClear } from './clear.js
 import { definition as statusDefinition, handle as handleStatus } from './status.js';
 import { definition as loginDefinition, handle as handleLogin } from './login.js';
 import { definition as coinflipDefinition, handle as handleCoinflip } from './coinflip.js';
-import { definition as rouletteDefinition, handle as handleRoulette } from './roulette.js';
+import { definition as rouletteDefinition, handle as handleRoulette, handleSelectMenu as handleRouletteSelect } from './roulette.js';
 import { definition as slotsDefinition, handle as handleSlots } from './slots.js';
 import { definition as diceDefinition, handle as handleDice } from './dice.js';
 import { definition as blackjackDefinition, handle as handleBlackjack } from './blackjack.js';
@@ -39,4 +39,8 @@ export const commandHandlers = {
   poker: handlePoker,
   baccarat: handleBaccarat,
   war: handleWar
+};
+
+export const componentHandlers = {
+  roulette_bet: handleRouletteSelect
 };
