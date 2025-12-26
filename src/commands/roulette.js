@@ -231,11 +231,6 @@ export async function handle(interaction, env, ctx) {
                   description: 'Bet on 3rd column (2:1 payout)'
                 },
                 {
-                  label: '🎯 Specific Number (0-36)',
-                  value: 'number',
-                  description: 'Choose a specific number (35:1 payout)'
-                },
-                {
                   label: '🎯 00 (Double Zero)',
                   value: '00',
                   description: 'Bet on 00 (35:1 payout)'
@@ -260,17 +255,6 @@ export async function handleSelectMenu(interaction, customId, selectedValues, en
     || interaction.member?.user?.username
     || interaction.user?.username
     || 'Player';
-  
-  // If user selected "number", show a follow-up message
-  if (bet === 'number') {
-    return {
-      type: 4,
-      data: {
-        content: '🎯 Please use the `/roulette` command again and type a specific number (0-36) in chat, or choose from the other betting options!',
-        flags: EPHEMERAL_FLAG
-      }
-    };
-  }
   
   // Spin the wheel
   const number = spinWheel();
