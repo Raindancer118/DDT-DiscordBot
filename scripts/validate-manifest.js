@@ -206,11 +206,19 @@ function validateManifest(manifestPath) {
     if (!manifest.manifest_url.startsWith('https://')) {
       console.error('❌ manifest_url must use HTTPS');
       hasErrors = true;
-    } else if (manifest.manifest_url.includes('example.com')) {
-      console.warn('⚠️  manifest_url uses example domain - update before submission');
-      hasWarnings = true;
     } else {
-      console.log('✅ manifest_url format valid');
+      try {
+        const manifestUrl = new URL(manifest.manifest_url);
+        if (manifestUrl.hostname === 'example.com' || manifestUrl.hostname.endsWith('.example.com')) {
+          console.warn('⚠️  manifest_url uses example domain - update before submission');
+          hasWarnings = true;
+        } else {
+          console.log('✅ manifest_url format valid');
+        }
+      } catch (e) {
+        console.error('❌ manifest_url is not a valid URL');
+        hasErrors = true;
+      }
     }
   }
 
@@ -220,11 +228,19 @@ function validateManifest(manifestPath) {
     if (!manifest.icon_url.startsWith('https://') && !manifest.icon_url.startsWith('http://')) {
       console.error('❌ icon_url must be a valid URL');
       hasErrors = true;
-    } else if (manifest.icon_url.includes('example.com')) {
-      console.warn('⚠️  icon_url uses example domain - update before submission');
-      hasWarnings = true;
     } else {
-      console.log('✅ icon_url format valid');
+      try {
+        const iconUrl = new URL(manifest.icon_url);
+        if (iconUrl.hostname === 'example.com' || iconUrl.hostname.endsWith('.example.com')) {
+          console.warn('⚠️  icon_url uses example domain - update before submission');
+          hasWarnings = true;
+        } else {
+          console.log('✅ icon_url format valid');
+        }
+      } catch (e) {
+        console.error('❌ icon_url is not a valid URL');
+        hasErrors = true;
+      }
     }
   }
 
