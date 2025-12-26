@@ -26,8 +26,6 @@ export const POST: APIRoute = async ({ locals, cookies }) => {
     }
 
     try {
-        const commands = commandDefinitions;
-        
         // Determine the endpoint URL based on whether GUILD_ID is set
         let url: string;
         let scope: string;
@@ -47,7 +45,7 @@ export const POST: APIRoute = async ({ locals, cookies }) => {
                 'Authorization': `Bot ${DISCORD_TOKEN}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(commands),
+            body: JSON.stringify(commandDefinitions),
         });
 
         if (!response.ok) {
@@ -69,7 +67,7 @@ export const POST: APIRoute = async ({ locals, cookies }) => {
 
         return new Response(JSON.stringify({ 
             success: true,
-            message: `Successfully synced ${commands.length} command(s) to ${scope}`,
+            message: `Successfully synced ${commandDefinitions.length} command(s) to ${scope}`,
             commands: commandList
         }), { 
             status: 200,

@@ -161,10 +161,11 @@ const discordLink = await db
         document.getElementById('syncCommandsBtn')?.addEventListener('click', async function() {
             const btn = this as HTMLButtonElement;
             const originalText = btn.textContent || '';
+            const BG_CLASSES = ['bg-purple-600', 'hover:bg-purple-500', 'bg-green-600', 'bg-red-600'];
             
             function setButtonState(text: string, bgClass: string) {
                 btn.textContent = text;
-                btn.classList.remove('bg-purple-600', 'hover:bg-purple-500', 'bg-green-600', 'bg-red-600');
+                btn.classList.remove(...BG_CLASSES);
                 btn.classList.add(bgClass);
             }
             
