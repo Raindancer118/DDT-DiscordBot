@@ -61,8 +61,32 @@
     },
     {
       "name": "coinflip",
-      "description": "Flip a coin (heads or tails)",
-      "handler": "commands/coinflip.js"
+      "description": "Flip a coin and bet on heads or tails",
+      "handler": "commands/coinflip.js",
+      "options": [
+        {
+          "type": 3,
+          "name": "bet",
+          "description": "Bet on heads or tails",
+          "required": true,
+          "choices": [
+            {
+              "name": "Heads",
+              "value": "heads"
+            },
+            {
+              "name": "Tails",
+              "value": "tails"
+            }
+          ]
+        },
+        {
+          "type": 4,
+          "name": "amount",
+          "description": "Amount to bet (for display purposes)",
+          "required": false
+        }
+      ]
     },
     {
       "name": "dice",
@@ -88,12 +112,6 @@
       "description": "Play roulette with various betting options",
       "handler": "commands/roulette.js",
       "options": [
-        {
-          "type": 3,
-          "name": "bet",
-          "description": "Your bet (e.g., '17', 'red', 'odd', '1-18', 'dozen1', 'column1')",
-          "required": true
-        },
         {
           "type": 4,
           "name": "amount",
