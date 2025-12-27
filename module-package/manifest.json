@@ -118,7 +118,6 @@
           "description": "Amount to bet (for display purposes)",
           "required": false
         }
-
       ]
     },
     {

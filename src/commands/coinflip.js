@@ -51,7 +51,6 @@ export async function handle(interaction, env, ctx) {
   
   // Determine winner
   const won = bet === flip;
-  const winnings = won ? amount * 2 : -amount;
   const profit = won ? amount : -amount;
   
   // Build embed
